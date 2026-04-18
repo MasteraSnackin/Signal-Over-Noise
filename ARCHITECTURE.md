@@ -101,7 +101,7 @@ This diagram shows the current container-level design. Two browser clients talk 
 
 #### Automation Routes
 
-- Responsibilities: expose batch outreach capabilities, execute local or Modal-eligible automation runs, and return tracked run status for replayable demo operations.
+- Responsibilities: expose batch outreach capabilities, execute local or Modal-eligible automation runs, and return tracked run status or recent run lists for replayable demo operations.
 - Main technologies: FastAPI route handlers and Pydantic models in [`api/routes/automation.py`](/Users/darkcomet/Documents/Hackathon/Signal Over Noise/api/routes/automation.py:1).
 - Important data it owns: automation run request and response models, execution-mode capability reporting, and run-status readback contracts.
 - Communication: invokes the automation service layer, reads and writes `automation_runs` in the shared store, and validates whether Modal execution is configured in the current environment.

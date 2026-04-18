@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from api.errors import ExternalServiceError, NotFoundError
@@ -85,6 +85,10 @@ class AutomationCapabilitiesResponse(BaseModel):
     next_feature: str
 
 
+class AutomationRunListResponse(BaseModel):
+    runs: list[AutomationRunResponse]
+
+
 def _serialize_automation_run(record: AutomationRunRecord) -> AutomationRunResponse:
     return AutomationRunResponse(
         run_id=record.run_id,
@@ -150,6 +154,7 @@ async def automation_capabilities() -> AutomationCapabilitiesResponse:
             "/api/v1/automation/capabilities",
             "/api/v1/automation/batch_outreach",
             "/api/v1/automation/demo_batch_outreach",
+            "/api/v1/automation/runs",
             "/api/v1/automation/runs/{run_id}",
         ],
         next_feature="batch_outreach_serverless_orchestration",
@@ -198,6 +203,22 @@ async def demo_batch_outreach(
         execution_mode=payload.execution_mode,
     )
     return _serialize_automation_run(run)
+
+
+@router.get("/runs", response_model=AutomationRunListResponse)
+async def list_automation_runs(
+    limit: int = Query(default=10, ge=1, le=50),
+    store: dict[str, dict[str, object]] = Depends(get_db),
+) -> AutomationRunListResponse:
+    runs = [
+        record
+        for record in store["automation_runs"].values()
+        if isinstance(record, AutomationRunRecord)
+    ]
+    runs.sort(key=lambda record: record.started_at, reverse=True)
+    return AutomationRunListResponse(
+        runs=[_serialize_automation_run(record) for record in runs[:limit]],
+    )
 
 
 @router.get("/runs/{run_id}", response_model=AutomationRunResponse)

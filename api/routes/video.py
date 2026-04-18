@@ -678,6 +678,16 @@ def _serialize_fallback_handoff(record: FallbackHandoffRecord) -> FallbackHandof
     )
 
 
+def _find_fallback_handoff_by_message_sid(
+    store: dict[str, dict[str, object]],
+    message_sid: str,
+) -> FallbackHandoffRecord | None:
+    for record in store["fallback_handoffs"].values():
+        if isinstance(record, FallbackHandoffRecord) and record.message_sid == message_sid:
+            return record
+    return None
+
+
 def _format_twilio_http_date(value: datetime | None) -> str | None:
     if value is None:
         return None
@@ -1052,8 +1062,7 @@ def _build_care_queue_from_latest(
                 job.name,
                 job,
                 note,
-                review,
-                active_review is not None,
+                active_review,
                 status,
             )
         )
@@ -1073,13 +1082,13 @@ def _build_care_queue_from_latest(
             risk_bucket=note.risk_bucket if note else None,
             latest_transcript=note.transcript if note else None,
             latest_created_at=note.created_at if note else None,
-            reviewed_at=review.reviewed_at if review else None,
-            reviewed_by=review.reviewed_by if review else None,
-            review_outcome=review.outcome if review else None,
-            review_note=review.note if review else None,
-            review_active=review_active,
+            reviewed_at=active_review.reviewed_at if active_review else None,
+            reviewed_by=active_review.reviewed_by if active_review else None,
+            review_outcome=active_review.outcome if active_review else None,
+            review_note=active_review.note if active_review else None,
+            review_active=active_review is not None,
         )
-        for _, _, _, job, note, review, review_active, status in top_candidates
+        for _, _, _, job, note, active_review, status in top_candidates
     ]
 
 
@@ -1453,6 +1462,7 @@ async def _retry_outreach_delivery(
             details={"message_sid": message_sid, "status": original_delivery.status},
         )
 
+    original_status = original_delivery.status
     retry_payload = SendOutreachRequest(
         customer_id=original_delivery.customer_id,
         campaign_type=original_delivery.campaign_type,
@@ -1460,6 +1470,13 @@ async def _retry_outreach_delivery(
         custom_message=original_delivery.message_body,
     )
     retried_delivery = await _send_outreach_delivery(payload=retry_payload, store=store)
+    original_delivery.status = "retried"
+    original_delivery.updated_at = datetime.now(timezone.utc)
+    if not original_delivery.error_message:
+        original_delivery.error_message = (
+            f"Original {original_status} delivery was retried as "
+            f"{retried_delivery.provider_message_id}."
+        )
 
     await log_event(
         event_type="twilio_outreach_retried",
@@ -1505,6 +1522,17 @@ async def _prepare_fallback_link(
             raise ValidationError(
                 "Only failed or undelivered Twilio demo messages can trigger a secure-link fallback.",
                 details={"message_sid": payload.message_sid, "status": matched_delivery.status},
+            )
+        existing_handoff = _find_fallback_handoff_by_message_sid(store, matched_delivery.provider_message_id)
+        if existing_handoff is not None:
+            return PrepareFallbackLinkResponse(
+                customer_id=existing_handoff.customer_id,
+                campaign_type=existing_handoff.campaign_type,
+                name=existing_handoff.name,
+                message_sid=existing_handoff.message_sid,
+                delivery_status=existing_handoff.delivery_status,
+                page_url=existing_handoff.page_url,
+                absolute_page_url=existing_handoff.absolute_page_url,
             )
 
     page_url = _page_url(job.customer_id, job.campaign_type)

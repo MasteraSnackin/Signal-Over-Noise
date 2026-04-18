@@ -32,6 +32,36 @@ class BatchOutreachRecipientSpec:
     background_image_url: str | None = None
 
 
+def _ensure_unique_batch_recipient_journeys(
+    recipients: list[BatchOutreachRecipientSpec],
+) -> None:
+    seen_keys: set[tuple[str, CampaignType]] = set()
+    duplicates: list[dict[str, str]] = []
+
+    for recipient in recipients:
+        customer_id = recipient.customer_id.strip()
+        if not customer_id:
+            continue
+
+        key = (customer_id, recipient.campaign_type)
+        if key in seen_keys:
+            duplicates.append(
+                {
+                    "customer_id": customer_id,
+                    "campaign_type": recipient.campaign_type,
+                }
+            )
+            continue
+
+        seen_keys.add(key)
+
+    if duplicates:
+        raise ValidationError(
+            "Each batch recipient must target a unique customer_id and campaign_type pair.",
+            details={"duplicates": duplicates},
+        )
+
+
 def modal_python_available() -> bool:
     return find_spec("modal") is not None
 
@@ -52,6 +82,7 @@ async def execute_batch_outreach_run(
     source: str,
     execution_mode: str = "local",
 ) -> AutomationRunRecord:
+    _ensure_unique_batch_recipient_journeys(recipients)
     started_at = datetime.now(timezone.utc)
     run = AutomationRunRecord(
         run_id=f"run_{uuid4().hex[:12]}",
@@ -86,6 +117,11 @@ async def execute_batch_outreach_run(
                 raise ValidationError("customer_id is required for batch recipients.")
             if not recipient.name.strip():
                 raise ValidationError("name is required for batch recipients.")
+            if send_sms and (not recipient.phone_number or not recipient.phone_number.strip()):
+                raise ValidationError(
+                    "phone_number is required when send_sms is enabled.",
+                    details={"customer_id": recipient.customer_id},
+                )
 
             create_request = CreateVideoJobRequest(
                 customer_id=recipient.customer_id,
@@ -101,12 +137,6 @@ async def execute_batch_outreach_run(
             run.created_jobs += 1
 
             if send_sms:
-                if not recipient.phone_number or not recipient.phone_number.strip():
-                    raise ValidationError(
-                        "phone_number is required when send_sms is enabled.",
-                        details={"customer_id": recipient.customer_id},
-                    )
-
                 send_request = SendOutreachRequest(
                     customer_id=recipient.customer_id,
                     campaign_type=recipient.campaign_type,
@@ -118,7 +148,6 @@ async def execute_batch_outreach_run(
                 run.created_deliveries += 1
 
             result["status"] = "completed"
-            run.processed_recipients += 1
         except ApplicationError as exc:
             run.error_count += 1
             result["error_message"] = exc.message
@@ -126,12 +155,13 @@ async def execute_batch_outreach_run(
             run.error_count += 1
             result["error_message"] = "Unexpected error while processing the batch recipient."
 
+        run.processed_recipients += 1
         run.results.append(result)
 
     run.completed_at = datetime.now(timezone.utc)
     if run.error_count == 0:
         run.status = "completed"
-    elif run.processed_recipients == 0:
+    elif run.error_count == run.total_recipients:
         run.status = "failed"
     else:
         run.status = "completed_with_errors"

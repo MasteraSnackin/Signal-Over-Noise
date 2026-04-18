@@ -240,6 +240,7 @@ Signal Over Noise exposes a REST API. It does not currently include a separate C
 - `GET /api/v1/automation/capabilities` — report local and Modal automation capability status.
 - `POST /api/v1/automation/batch_outreach` — run batch outreach for a supplied recipient list.
 - `POST /api/v1/automation/demo_batch_outreach` — run batch outreach using seeded demo scenarios.
+- `GET /api/v1/automation/runs` — list tracked automation runs, newest first.
 - `GET /api/v1/automation/runs/{run_id}` — fetch the status and results of a tracked automation run.
 
 ### Example: dashboard overview
@@ -265,9 +266,15 @@ curl -X POST http://127.0.0.1:8000/api/v1/voice_note/mock_submit \
 curl http://127.0.0.1:8000/api/v1/automation/capabilities
 ```
 
+### Example: list automation runs
+
+```bash
+curl http://127.0.0.1:8000/api/v1/automation/runs?limit=10
+```
+
 ## Tests
 
-Lightweight automated regression tests are configured for the core review workflow.
+Lightweight automated regression tests are configured for core review and automation workflow integrity.
 
 - Test command:
 
@@ -281,6 +288,14 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 - a newer voice note reopens the case for review
 - dashboard review summary counts only the latest active review per case
 - demo reset clears tracked automation runs
+- automation run listing returns newest-first results
+- batch outreach processed-recipient counts stay coherent for mixed-success runs
+- all-failed batch outreach runs report `failed` with fully processed recipient counts
+- invalid SMS batch recipients fail before creating video jobs or deliveries
+- duplicate patient journeys in one batch are rejected before any automation state is created
+- reopened cases clear stale review metadata from care-queue responses until a new review is active
+- failed Twilio demo messages can be retried once per original message before the source delivery is marked `retried`
+- repeated secure-link fallback requests for the same failed Twilio message reuse the existing handoff instead of duplicating it
 
 - Manual smoke testing is still useful for end-to-end demo flow checks through `/healthz`, `/web/upload.html`, and the seeded patient journeys.
 
