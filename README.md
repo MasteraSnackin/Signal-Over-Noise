@@ -9,7 +9,7 @@
 
 ## Description
 
-Signal Over Noise is a FastAPI-based demo application for care teams, product teams, and hackathon audiences who need to show a complete outreach workflow in one place. It solves the problem of stitching together personalised video outreach, patient voice-note capture, lightweight risk signalling, and follow-up actions by packaging the full flow into a single deployable web app with a browser-based care operations console and public patient pages.
+Signal Over Noise is a FastAPI-based demo application for care teams, who need to show a complete outreach workflow in one place. It solves the problem of stitching together personalised video outreach, patient voice-note capture, lightweight risk signalling, and follow-up actions by packaging the full flow into a single deployable web app with a browser-based care operations console and public patient pages.
 
 ## Table of Contents
 
