@@ -1,0 +1,4265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Over Noise Demo Console</title>
+    <style>
+        :root {
+            --sand: #f6efe4;
+            --paper: rgba(255, 251, 244, 0.88);
+            --panel: rgba(255, 247, 236, 0.84);
+            --ink: #223335;
+            --muted: #617071;
+            --line: rgba(34, 51, 53, 0.12);
+            --teal: #0f746b;
+            --teal-soft: rgba(15, 116, 107, 0.12);
+            --amber: #b87825;
+            --amber-soft: rgba(184, 120, 37, 0.14);
+            --rose: #a14a57;
+            --rose-soft: rgba(161, 74, 87, 0.16);
+            --shadow: 0 24px 56px rgba(34, 51, 53, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Avenir Next", "Segoe UI", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(15, 116, 107, 0.18), transparent 28rem),
+                radial-gradient(circle at 90% 10%, rgba(184, 120, 37, 0.18), transparent 24rem),
+                linear-gradient(180deg, #fbf8f3 0%, var(--sand) 58%, #ece2d0 100%);
+        }
+
+        .shell {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 38px 20px 64px;
+        }
+
+        .hero {
+            display: grid;
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            width: fit-content;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.44);
+            background: rgba(255, 255, 255, 0.62);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            font-size: 0.74rem;
+            color: var(--muted);
+            backdrop-filter: blur(12px);
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        h1 {
+            max-width: 11ch;
+            font-size: clamp(2.8rem, 7vw, 5rem);
+            letter-spacing: -0.05em;
+        }
+
+        p {
+            margin: 0;
+            line-height: 1.7;
+        }
+
+        .lede {
+            max-width: 62rem;
+            color: var(--muted);
+            font-size: 1.05rem;
+        }
+
+        .story-banner {
+            display: grid;
+            gap: 10px;
+            padding: 18px 20px;
+            border-radius: 24px;
+            background: rgba(255, 251, 244, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.56);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(14px);
+        }
+
+        .story-banner-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .story-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--teal-soft);
+            color: var(--teal);
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .story-summary {
+            font-size: 1rem;
+            color: var(--ink);
+            line-height: 1.6;
+        }
+
+        .story-detail {
+            color: var(--muted);
+            font-size: 0.94rem;
+            line-height: 1.6;
+        }
+
+        .toast-stack {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: grid;
+            gap: 10px;
+            width: min(360px, calc(100vw - 32px));
+            pointer-events: none;
+        }
+
+        .toast {
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.56);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(16px);
+            background: rgba(255, 251, 244, 0.95);
+            color: var(--ink);
+            font-size: 0.94rem;
+            line-height: 1.5;
+            opacity: 0;
+            transform: translateY(-6px);
+            animation: toast-in 0.18s ease forwards;
+        }
+
+        .toast-success {
+            border-color: rgba(15, 116, 107, 0.2);
+            background: rgba(240, 250, 248, 0.96);
+        }
+
+        .toast-error {
+            border-color: rgba(161, 74, 87, 0.22);
+            background: rgba(255, 244, 245, 0.96);
+        }
+
+        .presenter-summary {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(15, 116, 107, 0.08);
+            color: var(--ink);
+            line-height: 1.6;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.95fr);
+            gap: 22px;
+        }
+
+        .stack {
+            display: grid;
+            gap: 22px;
+        }
+
+        .card {
+            background: var(--paper);
+            border: 1px solid rgba(255, 255, 255, 0.56);
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(16px);
+            animation: fade-up 0.6s ease both;
+        }
+
+        .soft-card {
+            background: var(--panel);
+        }
+
+        .card-head {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .label {
+            color: var(--muted);
+            font-size: 0.8rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .demo-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .demo-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 14px;
+            align-items: center;
+            padding: 16px 18px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.68);
+            border: 1px solid var(--line);
+        }
+
+        .demo-copy {
+            display: grid;
+            gap: 4px;
+        }
+
+        .demo-copy strong {
+            font-size: 1rem;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 0.94rem;
+        }
+
+        form {
+            display: grid;
+            gap: 14px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .field {
+            display: grid;
+            gap: 8px;
+        }
+
+        .field-note {
+            color: var(--muted);
+            font-size: 0.86rem;
+            line-height: 1.5;
+        }
+
+        .preset-summary {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(15, 116, 107, 0.08);
+            color: var(--ink);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .field.wide {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid rgba(34, 51, 53, 0.14);
+            background: rgba(255, 255, 255, 0.78);
+            padding: 14px 16px;
+            font: inherit;
+            color: var(--ink);
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid rgba(15, 116, 107, 0.22);
+            border-color: rgba(15, 116, 107, 0.4);
+        }
+
+        input:disabled {
+            opacity: 0.58;
+            cursor: not-allowed;
+        }
+
+        button, .launch-link {
+            border: 0;
+            border-radius: 999px;
+            padding: 13px 18px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover:not(:disabled), .launch-link:hover {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .primary {
+            color: white;
+            background: linear-gradient(135deg, #0f746b, #178a80);
+            box-shadow: 0 16px 32px rgba(15, 116, 107, 0.22);
+        }
+
+        .ghost {
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid var(--line);
+        }
+
+        .status {
+            min-height: 1.4rem;
+            color: var(--muted);
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .toolbar label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.68);
+            border: 1px solid var(--line);
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .toolbar input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            accent-color: var(--teal);
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .metric-card {
+            padding: 16px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.68);
+            display: grid;
+            gap: 8px;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .metric-value {
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .metric-detail {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .code-block {
+            margin: 0;
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(34, 51, 53, 0.06);
+            color: #254245;
+            font-size: 0.86rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .signal-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .signal-item {
+            padding: 16px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.66);
+            display: grid;
+            gap: 10px;
+        }
+
+        .legend-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .legend-item {
+            padding: 16px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.68);
+            display: grid;
+            gap: 10px;
+            cursor: pointer;
+            transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .legend-item:hover {
+            transform: translateY(-1px);
+        }
+
+        .legend-item:focus-visible {
+            outline: 2px solid rgba(15, 116, 107, 0.24);
+            outline-offset: 2px;
+        }
+
+        .legend-item.is-active {
+            border-color: rgba(15, 116, 107, 0.34);
+            box-shadow: 0 14px 28px rgba(15, 116, 107, 0.12);
+            background: rgba(255, 255, 255, 0.82);
+        }
+
+        .legend-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .legend-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .signal-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .risk-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
+        .risk-low {
+            color: var(--teal);
+            background: var(--teal-soft);
+        }
+
+        .risk-medium {
+            color: var(--amber);
+            background: var(--amber-soft);
+        }
+
+        .risk-high {
+            color: var(--rose);
+            background: var(--rose-soft);
+        }
+
+        .summary-list {
+            margin: 0;
+            padding-left: 18px;
+            color: var(--muted);
+            display: grid;
+            gap: 10px;
+        }
+
+        .queue-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .queue-summary {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(15, 116, 107, 0.08);
+            color: var(--ink);
+            line-height: 1.6;
+        }
+
+        .spotlight-card {
+            display: grid;
+            gap: 12px;
+            padding: 18px;
+            border-radius: 22px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .spotlight-head {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .spotlight-title {
+            font-size: 1.1rem;
+        }
+
+        .spotlight-note {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(15, 116, 107, 0.08);
+            color: var(--ink);
+            line-height: 1.6;
+        }
+
+        .spotlight-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .queue-filters {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 0.7fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .queue-item {
+            padding: 16px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.68);
+            display: grid;
+            gap: 10px;
+        }
+
+        .queue-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .queue-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .queue-footer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .queue-link {
+            color: var(--teal);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .queue-link:hover {
+            text-decoration: underline;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
+        .status-awaiting_response {
+            color: var(--muted);
+            background: rgba(97, 112, 113, 0.14);
+        }
+
+        .status-monitor {
+            color: var(--teal);
+            background: var(--teal-soft);
+        }
+
+        .status-review_soon {
+            color: var(--amber);
+            background: var(--amber-soft);
+        }
+
+        .status-priority_followup {
+            color: var(--rose);
+            background: var(--rose-soft);
+        }
+
+        .status-reviewed {
+            color: #5562a0;
+            background: rgba(85, 98, 160, 0.14);
+        }
+
+        .mode-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .mode-demo {
+            color: var(--teal);
+            background: var(--teal-soft);
+        }
+
+        .mode-uploaded {
+            color: var(--amber);
+            background: var(--amber-soft);
+        }
+
+        .review-outcome-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .review-outcome-row {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.68);
+            border: 1px solid var(--line);
+            cursor: pointer;
+            transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .review-outcome-row:hover {
+            transform: translateY(-1px);
+        }
+
+        .review-outcome-row:focus-visible {
+            outline: 2px solid rgba(15, 116, 107, 0.24);
+            outline-offset: 2px;
+        }
+
+        .review-outcome-row.is-active {
+            border-color: rgba(15, 116, 107, 0.34);
+            box-shadow: 0 14px 28px rgba(15, 116, 107, 0.12);
+            background: rgba(255, 255, 255, 0.82);
+        }
+
+        .review-outcome-track {
+            height: 12px;
+            border-radius: 999px;
+            background: rgba(34, 51, 53, 0.08);
+            overflow: hidden;
+        }
+
+        .review-outcome-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(15, 116, 107, 0.92), rgba(82, 140, 204, 0.86));
+        }
+
+        .event-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .event-item {
+            padding: 16px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.66);
+            display: grid;
+            gap: 10px;
+        }
+
+        .event-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .event-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: rgba(15, 116, 107, 0.12);
+            color: var(--teal);
+        }
+
+        /* Visual refactor overrides */
+
+        body {
+            font-family: "Avenir Next", "Optima", "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at 14% 12%, rgba(47, 133, 142, 0.2), transparent 24rem),
+                radial-gradient(circle at 82% 10%, rgba(193, 116, 60, 0.2), transparent 22rem),
+                radial-gradient(circle at 50% 120%, rgba(82, 140, 204, 0.16), transparent 30rem),
+                linear-gradient(180deg, #fcf6ee 0%, #f3eadb 56%, #e7dac6 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 36px 36px;
+            mask-image: radial-gradient(circle at center, black, transparent 78%);
+            opacity: 0.45;
+        }
+
+        .shell {
+            max-width: 1420px;
+            padding: 48px 24px 88px;
+            position: relative;
+        }
+
+        .shell::before {
+            content: "";
+            position: absolute;
+            inset: 18px 8px auto;
+            height: 240px;
+            border-radius: 40px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.12));
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            opacity: 0.8;
+            filter: blur(0.4px);
+            z-index: 0;
+        }
+
+        .shell > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero {
+            margin-bottom: 30px;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
+            gap: 22px;
+            align-items: stretch;
+        }
+
+        .hero-copy {
+            display: grid;
+            gap: 20px;
+        }
+
+        .eyebrow {
+            padding: 9px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.62);
+            background: rgba(255, 255, 255, 0.78);
+            color: rgba(34, 51, 53, 0.72);
+            box-shadow: 0 10px 24px rgba(34, 51, 53, 0.08);
+        }
+
+        h1 {
+            max-width: 10ch;
+            font-size: clamp(3.2rem, 7.8vw, 5.8rem);
+            line-height: 0.94;
+            letter-spacing: -0.065em;
+        }
+
+        .lede {
+            max-width: 48rem;
+            font-size: 1.08rem;
+            color: rgba(52, 69, 70, 0.82);
+        }
+
+        .hero-panel {
+            position: relative;
+            display: grid;
+            gap: 18px;
+            align-content: start;
+            padding: 28px;
+            border-radius: 30px;
+            background:
+                linear-gradient(160deg, rgba(26, 41, 44, 0.96), rgba(31, 58, 62, 0.9)),
+                radial-gradient(circle at top right, rgba(127, 209, 215, 0.16), transparent 12rem);
+            color: rgba(248, 243, 234, 0.94);
+            box-shadow: 0 28px 52px rgba(28, 39, 40, 0.18);
+            overflow: hidden;
+        }
+
+        .hero-panel::before {
+            content: "";
+            position: absolute;
+            inset: auto -2.5rem -2.5rem auto;
+            width: 13rem;
+            height: 13rem;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(130, 205, 211, 0.3), transparent 68%);
+            pointer-events: none;
+        }
+
+        .hero-panel .label {
+            color: rgba(244, 235, 223, 0.68);
+        }
+
+        .hero-panel h2 {
+            font-size: clamp(1.65rem, 3vw, 2.3rem);
+            line-height: 0.98;
+            letter-spacing: -0.045em;
+        }
+
+        .hero-panel p {
+            color: rgba(244, 235, 223, 0.78);
+        }
+
+        .hero-microgrid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .hero-metric {
+            display: grid;
+            gap: 8px;
+            padding: 16px 16px 18px;
+            border-radius: 22px;
+            background: rgba(255, 251, 244, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(14px);
+        }
+
+        .hero-metric-label {
+            font-size: 0.74rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(244, 235, 223, 0.58);
+        }
+
+        .hero-metric strong {
+            font-size: 1.28rem;
+            font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+            font-weight: 600;
+            line-height: 1;
+            color: rgba(255, 251, 244, 0.96);
+        }
+
+        .hero-metric p {
+            font-size: 0.92rem;
+            line-height: 1.55;
+            color: rgba(244, 235, 223, 0.74);
+        }
+
+        .story-banner {
+            padding: 20px 22px;
+            border-radius: 28px;
+            background:
+                linear-gradient(145deg, rgba(255, 253, 247, 0.92), rgba(255, 247, 236, 0.76));
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            box-shadow: 0 24px 52px rgba(34, 51, 53, 0.1);
+        }
+
+        .story-badge {
+            background: linear-gradient(135deg, rgba(15, 116, 107, 0.18), rgba(82, 140, 204, 0.16));
+            color: #18554f;
+            border: 1px solid rgba(15, 116, 107, 0.12);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .layout {
+            grid-template-columns: minmax(0, 1.22fr) minmax(360px, 0.96fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        .stack {
+            gap: 24px;
+        }
+
+        .card {
+            position: relative;
+            overflow: hidden;
+            padding: 26px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            background:
+                linear-gradient(155deg, rgba(255, 252, 247, 0.92), rgba(255, 247, 238, 0.74));
+            box-shadow:
+                0 28px 56px rgba(34, 51, 53, 0.11),
+                inset 0 1px 0 rgba(255, 255, 255, 0.52);
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 92px;
+            background: var(--card-accent, linear-gradient(135deg, rgba(15, 116, 107, 0.16), rgba(82, 140, 204, 0.1)));
+            opacity: 0.95;
+            pointer-events: none;
+        }
+
+        .card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 34px 68px rgba(34, 51, 53, 0.14),
+                inset 0 1px 0 rgba(255, 255, 255, 0.56);
+        }
+
+        .soft-card {
+            background:
+                linear-gradient(155deg, rgba(255, 250, 244, 0.94), rgba(250, 241, 229, 0.8));
+        }
+
+        .tone-lagoon { --card-accent: linear-gradient(135deg, rgba(27, 119, 111, 0.2), rgba(102, 161, 169, 0.12)); }
+        .tone-studio { --card-accent: linear-gradient(135deg, rgba(195, 127, 68, 0.18), rgba(15, 116, 107, 0.08)); }
+        .tone-atlas { --card-accent: linear-gradient(135deg, rgba(82, 140, 204, 0.18), rgba(15, 116, 107, 0.08)); }
+        .tone-orchid { --card-accent: linear-gradient(135deg, rgba(122, 112, 192, 0.16), rgba(207, 174, 114, 0.08)); }
+        .tone-telemetry { --card-accent: linear-gradient(135deg, rgba(26, 41, 44, 0.16), rgba(82, 140, 204, 0.14)); }
+        .tone-sunrise { --card-accent: linear-gradient(135deg, rgba(193, 116, 60, 0.18), rgba(214, 183, 124, 0.12)); }
+        .tone-guide { --card-accent: linear-gradient(135deg, rgba(15, 116, 107, 0.16), rgba(193, 116, 60, 0.08)); }
+        .tone-amber { --card-accent: linear-gradient(135deg, rgba(193, 116, 60, 0.2), rgba(235, 205, 156, 0.08)); }
+        .tone-stream { --card-accent: linear-gradient(135deg, rgba(82, 140, 204, 0.18), rgba(15, 116, 107, 0.08)); }
+        .tone-command { --card-accent: linear-gradient(135deg, rgba(34, 51, 53, 0.14), rgba(82, 140, 204, 0.12)); }
+        .tone-monitor { --card-accent: linear-gradient(135deg, rgba(15, 116, 107, 0.14), rgba(122, 112, 192, 0.08)); }
+        .tone-plain { --card-accent: linear-gradient(135deg, rgba(193, 116, 60, 0.14), rgba(15, 116, 107, 0.08)); }
+
+        .card-head {
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .label {
+            color: rgba(71, 89, 90, 0.78);
+            font-size: 0.76rem;
+            letter-spacing: 0.18em;
+        }
+
+        .muted,
+        .status,
+        .field-note,
+        .metric-detail {
+            color: rgba(73, 91, 93, 0.76);
+        }
+
+        input, select {
+            border-radius: 18px;
+            border: 1px solid rgba(34, 51, 53, 0.12);
+            background: rgba(255, 255, 255, 0.84);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52);
+        }
+
+        button, .launch-link {
+            padding: 13px 18px;
+            letter-spacing: 0.01em;
+            box-shadow: 0 10px 24px rgba(34, 51, 53, 0.08);
+        }
+
+        .primary {
+            background: linear-gradient(135deg, #0f746b, #246e9c);
+            box-shadow: 0 16px 34px rgba(26, 93, 113, 0.24);
+        }
+
+        .ghost {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(34, 51, 53, 0.12);
+            box-shadow: 0 10px 22px rgba(34, 51, 53, 0.06);
+        }
+
+        .toolbar {
+            gap: 12px;
+        }
+
+        .toolbar label {
+            min-height: 48px;
+            padding: 0 14px;
+            background: rgba(255, 255, 255, 0.76);
+        }
+
+        .metric-card,
+        .demo-row,
+        .signal-item,
+        .legend-item,
+        .queue-item,
+        .event-item,
+        .review-outcome-row,
+        .spotlight-card {
+            background:
+                linear-gradient(160deg, rgba(255, 255, 255, 0.82), rgba(255, 250, 245, 0.62));
+            border: 1px solid rgba(34, 51, 53, 0.1);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .metric-card {
+            padding: 18px 18px 20px;
+            min-height: 142px;
+            align-content: space-between;
+        }
+
+        .code-block {
+            border-radius: 22px;
+            background: linear-gradient(160deg, rgba(30, 44, 47, 0.9), rgba(48, 62, 66, 0.86));
+            color: rgba(244, 239, 233, 0.9);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+
+        .presenter-summary,
+        .preset-summary,
+        .queue-summary,
+        .spotlight-note {
+            border-radius: 22px;
+            background: linear-gradient(145deg, rgba(15, 116, 107, 0.11), rgba(82, 140, 204, 0.08));
+            border: 1px solid rgba(15, 116, 107, 0.08);
+        }
+
+        .detail-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 12px;
+        }
+
+        .detail-list li {
+            display: grid;
+            gap: 6px;
+            padding: 16px 18px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.62);
+            border: 1px solid rgba(34, 51, 53, 0.08);
+        }
+
+        .queue-filters {
+            gap: 12px;
+        }
+
+        .status-pill,
+        .risk-pill,
+        .mode-pill,
+        .event-pill {
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        @keyframes fade-up {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes toast-in {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .hero-grid,
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-microgrid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .shell {
+                padding: 28px 16px 64px;
+            }
+
+            .hero-microgrid,
+            .metric-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .queue-filters {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-row {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                max-width: none;
+            }
+
+            .card {
+                padding: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-host" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+    <main class="shell">
+        <section class="hero">
+            <div class="hero-grid">
+                <div class="hero-copy">
+                    <span class="eyebrow">Healthcare hackathon PoC</span>
+                    <h1>Signal Over Noise Demo Console</h1>
+                    <p class="lede">
+                        Orchestrate seeded patient journeys, generate personalized outreach videos with either demo visuals or uploaded assets,
+                        and monitor the latest biomarker-informed voice-note signals from one plain HTML control room.
+                    </p>
+                    <section class="story-banner">
+                        <div class="story-banner-top">
+                            <span id="story-state-badge" class="story-badge">Loading state</span>
+                        </div>
+                        <strong id="story-state-summary" class="story-summary">Reading the demo store and queue state...</strong>
+                        <div id="story-state-detail" class="story-detail">This banner updates as signals arrive and as the active queue slice changes.</div>
+                    </section>
+                </div>
+
+                <aside class="hero-panel">
+                    <span class="label">Pitch framing</span>
+                    <h2>One calm command surface for outreach, triage, review, and sponsor proof.</h2>
+                    <p>
+                        The dashboard is designed to move judges from seeded patient journeys into live signal interpretation,
+                        care-team prioritisation, and outward follow-up without leaving a single screen.
+                    </p>
+                    <div class="hero-microgrid">
+                        <div class="hero-metric">
+                            <span class="hero-metric-label">Care settings</span>
+                            <strong>3 live lanes</strong>
+                            <p>Elderly care, GP-style primary care, and mental health are seeded and ready from startup.</p>
+                        </div>
+                        <div class="hero-metric">
+                            <span class="hero-metric-label">Signal loop</span>
+                            <strong>Voice first</strong>
+                            <p>Every journey can move from outreach video to transcript, risk bucket, and queue action.</p>
+                        </div>
+                        <div class="hero-metric">
+                            <span class="hero-metric-label">Sponsor story</span>
+                            <strong>Render · Tuner · Twilio</strong>
+                            <p>Deployment readiness, observability, and outbound messaging are visible in the same command room.</p>
+                        </div>
+                        <div class="hero-metric">
+                            <span class="hero-metric-label">Judge speed</span>
+                            <strong>Launch in one click</strong>
+                            <p>The pitch path, strongest case jump, and review loop are all staged for fast live demos.</p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section class="layout">
+            <div class="stack stack-primary">
+                <section class="card soft-card tone-lagoon">
+                    <div class="card-head">
+                        <span class="label">Instant demo journeys</span>
+                        <h2>Quick Demo Jobs</h2>
+                        <p class="muted">Seeded at startup so judges can jump directly into elderly care, primary care, or mental health outreach without setup work.</p>
+                    </div>
+                    <div id="quick-demo-list" class="demo-grid"></div>
+                    <p id="quick-demo-status" class="status"></p>
+                </section>
+
+                <section class="card tone-studio">
+                    <div class="card-head">
+                        <span class="label">Custom setup</span>
+                        <h2>Create a Personalized Video Job</h2>
+                        <p class="muted">Use demo visuals for the fastest pitch flow, or upload campaign-specific assets when you want a more tailored journey.</p>
+                    </div>
+
+                    <form id="upload-form">
+                        <div class="form-grid">
+                            <div class="field">
+                                <label for="customer_id">Customer ID</label>
+                                <input id="customer_id" name="customer_id" type="text" value="demo_custom_001" required>
+                            </div>
+                            <div class="field">
+                                <label for="name">Customer name</label>
+                                <input id="name" name="name" type="text" value="Alex Morgan" required>
+                            </div>
+                            <div class="field">
+                                <label for="plan">Plan</label>
+                                <input id="plan" name="plan" type="text" value="follow_up">
+                            </div>
+                            <div class="field">
+                                <label for="days_to_expiry">Days to expiry</label>
+                                <input id="days_to_expiry" name="days_to_expiry" type="number" min="0" value="7">
+                            </div>
+                            <div class="field wide">
+                                <label for="use_demo_visuals">
+                                    <input id="use_demo_visuals" name="use_demo_visuals" type="checkbox" checked>
+                                    Use demo visuals for fast pitch flow
+                                </label>
+                                <span id="visual-mode-note" class="field-note">
+                                    Demo visuals mode skips file upload and creates a personalized outreach job immediately.
+                                </span>
+                            </div>
+                            <div class="field">
+                                <label for="avatar">Avatar image</label>
+                                <input id="avatar" name="avatar" type="file" accept="image/*" required>
+                            </div>
+                            <div class="field">
+                                <label for="background">Background image</label>
+                                <input id="background" name="background" type="file" accept="image/*" required>
+                            </div>
+                            <div class="field wide">
+                                <label for="campaign_type">Campaign type</label>
+                                <select id="campaign_type" name="campaign_type" required>
+                                    <option value="elderly_checkin">elderly_checkin</option>
+                                    <option value="primary_care">primary_care</option>
+                                    <option value="mental_health">mental_health</option>
+                                </select>
+                            </div>
+                            <div class="field wide">
+                                <div class="toolbar">
+                                    <button id="apply-preset-button" class="ghost" type="button">Apply campaign preset</button>
+                                    <span id="preset-status" class="field-note">
+                                        Switch campaign type to load suggested defaults while preserving any fields you already edited.
+                                    </span>
+                                </div>
+                                <div id="preset-summary" class="preset-summary">
+                                    Recommended customer defaults will appear here.
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="generate-button" class="primary" type="submit">Create video with demo visuals</button>
+                    </form>
+
+                    <div class="spotlight-card">
+                        <div class="spotlight-head">
+                            <span class="label">Live outreach preview</span>
+                            <span id="preview-mode-pill" class="mode-pill mode-demo">demo visuals</span>
+                        </div>
+                        <strong id="preview-heading" class="spotlight-title">Personalized message preview</strong>
+                        <div id="preview-meta" class="muted">Adjust the form to preview the generated outreach message.</div>
+                        <div id="preview-script" class="spotlight-note">Loading preview...</div>
+                    </div>
+
+                    <p id="upload-status" class="status"></p>
+                    <pre id="upload-result" class="code-block"></pre>
+                    <pre id="create-result" class="code-block"></pre>
+                    <div id="launch-container"></div>
+                </section>
+            </div>
+
+            <aside class="stack stack-secondary">
+                <section class="card tone-atlas">
+                    <div class="card-head">
+                        <span class="label">Live dashboard</span>
+                        <h2>Care Ops Snapshot</h2>
+                        <p class="muted">A quick summary of outreach volume and the latest voice-signal activity across the demo store.</p>
+                    </div>
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <span class="metric-label">Video jobs</span>
+                            <strong id="metric-video-jobs" class="metric-value">0</strong>
+                            <span id="metric-video-detail" class="metric-detail">No outreach jobs yet.</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Voice notes</span>
+                            <strong id="metric-voice-notes" class="metric-value">0</strong>
+                            <span id="metric-note-detail" class="metric-detail">No signals captured yet.</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">High risk</span>
+                            <strong id="metric-high-risk" class="metric-value">0</strong>
+                            <span id="metric-risk-detail" class="metric-detail">No escalations currently flagged.</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Latest update</span>
+                            <strong id="metric-latest-update" class="metric-value">-</strong>
+                            <span id="metric-latest-detail" class="metric-detail">Awaiting the first signal.</span>
+                        </div>
+                    </div>
+                    <div class="toolbar">
+                        <button id="launch-pitch-path-button" class="primary" type="button">Launch pitch path</button>
+                        <button id="reset-launch-pitch-path-button" class="ghost" type="button">Reset + launch pitch path</button>
+                        <button id="open-strongest-case-button" class="ghost" type="button" disabled>Open strongest case</button>
+                        <button id="seed-signals-button" class="ghost" type="button">Populate demo signals</button>
+                        <button id="reset-demo-button" class="ghost" type="button">Reset demo state</button>
+                        <button id="refresh-dashboard-button" class="ghost" type="button">Refresh dashboard</button>
+                        <label for="auto-refresh-toggle">
+                            <input id="auto-refresh-toggle" type="checkbox">
+                            Live refresh
+                        </label>
+                    </div>
+                    <div id="summary-status" class="status"></div>
+                </section>
+
+                <section class="card soft-card tone-orchid">
+                    <div class="card-head">
+                        <span class="label">Review analytics</span>
+                        <h2>Review Outcome Snapshot</h2>
+                        <p class="muted">A compact view of how the care team is resolving reviewed cases across escalations, routine follow-up, and closed-loop completions. Click a row to focus the queue on that reviewed outcome.</p>
+                    </div>
+                    <div id="review-outcome-status" class="status">No review outcomes recorded yet.</div>
+                    <div id="review-outcome-list" class="review-outcome-list"></div>
+                </section>
+
+                <section class="card soft-card tone-telemetry">
+                    <div class="card-head">
+                        <span class="label">Sponsor stack</span>
+                        <h2>Render · Tuner · Twilio</h2>
+                        <p class="muted">Deployment readiness on Render, workflow observability through Tuner, and outbound SMS outreach through a Twilio-ready stub.</p>
+                    </div>
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <span class="metric-label">Render</span>
+                            <strong id="render-status-value" class="metric-value">checking</strong>
+                            <span id="render-status-detail" class="metric-detail">Reading deploy readiness.</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Tuner</span>
+                            <strong id="tuner-status-value" class="metric-value">0</strong>
+                            <span id="tuner-status-detail" class="metric-detail">No workflow events captured yet.</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Twilio</span>
+                            <strong id="twilio-status-value" class="metric-value">0</strong>
+                            <span id="twilio-status-detail" class="metric-detail">No SMS outreach sent yet.</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="twilio-phone-number">Twilio demo phone</label>
+                        <input id="twilio-phone-number" type="tel" value="+447700900123" placeholder="+447700900123">
+                    </div>
+                    <div class="toolbar">
+                        <button id="send-strongest-case-sms-button" class="primary" type="button" disabled>Send strongest-case SMS</button>
+                        <button id="refresh-sponsor-button" class="ghost" type="button">Refresh sponsor view</button>
+                    </div>
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="twilio-sim-status">Simulate Twilio status</label>
+                            <select id="twilio-sim-status">
+                                <option value="sent">sent</option>
+                                <option value="delivered">delivered</option>
+                                <option value="undelivered">undelivered</option>
+                                <option value="failed">failed</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="simulate-twilio-status-button">Apply to selected message</label>
+                            <button id="simulate-twilio-status-button" class="ghost" type="button">Simulate status callback</button>
+                        </div>
+                        <div class="field">
+                            <label for="progress-twilio-status-button">Run lifecycle demo</label>
+                            <button id="progress-twilio-status-button" class="ghost" type="button">Run queued -> sent -> delivered</button>
+                        </div>
+                        <div class="field">
+                            <label for="retry-twilio-delivery-button">Recover failed delivery</label>
+                            <button id="retry-twilio-delivery-button" class="ghost" type="button">Retry failed delivery</button>
+                        </div>
+                        <div class="field">
+                            <label for="prepare-twilio-fallback-button">Fallback to secure page link</label>
+                            <button id="prepare-twilio-fallback-button" class="ghost" type="button">Copy secure link fallback</button>
+                        </div>
+                    </div>
+                    <div id="twilio-delivery-status" class="status">No Twilio outreach sent yet.</div>
+                    <div id="twilio-delivery-list" class="signal-list"></div>
+                    <div id="twilio-resource-status" class="status">No Twilio message resource loaded yet.</div>
+                    <pre id="twilio-resource-preview" class="code-block">No Twilio message resource loaded yet.</pre>
+                    <div id="twilio-message-list-status" class="status">No Twilio message list loaded yet.</div>
+                    <pre id="twilio-message-list-preview" class="code-block">No Twilio message list loaded yet.</pre>
+                    <div id="twilio-fallback-status" class="status">No secure-link fallbacks prepared yet.</div>
+                    <div id="twilio-fallback-list" class="signal-list"></div>
+                </section>
+
+                <section class="card soft-card tone-sunrise">
+                    <div class="card-head">
+                        <span class="label">Presenter mode</span>
+                        <h2>Live Presenter Notes</h2>
+                        <p class="muted">A dynamic prompt for what to say next, what to click next, and why that demo beat matters.</p>
+                    </div>
+                    <div class="spotlight-head">
+                        <span id="presenter-note-badge" class="story-badge">Loading cue</span>
+                        <div class="queue-actions">
+                            <button id="copy-demo-script-button" class="ghost" type="button">Copy demo script</button>
+                            <button id="download-demo-brief-button" class="ghost" type="button">Download demo brief</button>
+                        </div>
+                    </div>
+                    <div id="presenter-note-summary" class="presenter-summary">Reading the current demo state and queue filters...</div>
+                    <ul class="detail-list">
+                        <li>
+                            <strong>Say Next</strong>
+                            <span id="presenter-note-line">Loading the strongest next sentence for the current state.</span>
+                        </li>
+                        <li>
+                            <strong>Click Next</strong>
+                            <span id="presenter-note-click">Waiting for the first state update.</span>
+                        </li>
+                        <li>
+                            <strong>Why It Matters</strong>
+                            <span id="presenter-note-why">This will explain the value of the current story beat.</span>
+                        </li>
+                    </ul>
+                </section>
+
+                <section class="card soft-card tone-guide">
+                    <div class="card-head">
+                        <span class="label">Shared language</span>
+                        <h2>Risk to Action Guide</h2>
+                        <p class="muted">The same trigger language used on the patient page comparison card, mirrored here for care-ops review. Click any row to filter the queue to that action tier.</p>
+                    </div>
+                    <div id="risk-action-list" class="legend-list"></div>
+                </section>
+
+                <section class="card soft-card tone-amber">
+                    <div class="card-head">
+                        <span class="label">Clinical spotlight</span>
+                        <h2>Next Review Candidate</h2>
+                        <p class="muted">The highest-priority case in the current queue filters, with a suggested care-team action.</p>
+                    </div>
+                    <div class="spotlight-card">
+                        <div class="spotlight-head">
+                            <span id="spotlight-status" class="status-pill status-awaiting_response">awaiting_response</span>
+                            <span id="spotlight-risk" class="risk-pill risk-low" hidden>low risk</span>
+                        </div>
+                        <strong id="spotlight-name" class="spotlight-title">Awaiting queue data</strong>
+                        <div id="spotlight-meta" class="muted">Load queue items to surface a review candidate.</div>
+                        <div id="spotlight-action" class="spotlight-note">No care-team recommendation available yet.</div>
+                        <div id="spotlight-transcript" class="muted">No transcript captured yet.</div>
+                        <div class="form-grid">
+                            <div class="field">
+                                <label for="reviewer-name-input">Reviewer name</label>
+                                <input id="reviewer-name-input" type="text" value="Jordan Lee" placeholder="Jordan Lee">
+                            </div>
+                            <div class="field">
+                                <label for="review-outcome-input">Review outcome</label>
+                                <select id="review-outcome-input">
+                                    <option value="routine_followup">routine_followup</option>
+                                    <option value="escalated">escalated</option>
+                                    <option value="closed">closed</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="review-note-input">Review note</label>
+                                <input id="review-note-input" type="text" value="Reviewed and queued next step." placeholder="Reviewed and queued next step.">
+                            </div>
+                        </div>
+                        <div class="spotlight-actions">
+                            <button id="spotlight-review-button" class="ghost" type="button" hidden>Mark reviewed</button>
+                            <button id="spotlight-load-button" class="ghost" type="button" hidden>Load into custom setup</button>
+                            <a id="spotlight-link" class="launch-link primary" href="#" hidden>Open highlighted patient page</a>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card soft-card tone-stream">
+                    <div class="card-head">
+                        <span class="label">Signal feed</span>
+                        <h2>Recent Voice Signals</h2>
+                        <p class="muted">Latest submitted voice notes and inferred risk buckets from the in-memory demo store.</p>
+                    </div>
+                    <button id="refresh-feed-button" class="ghost" type="button">Refresh signal feed</button>
+                    <div id="signal-feed-status" class="status"></div>
+                    <div id="signal-feed-list" class="signal-list"></div>
+                </section>
+
+                <section id="queue-card" class="card tone-command">
+                    <div class="card-head">
+                        <span class="label">Care review</span>
+                        <h2>Prioritized Queue</h2>
+                        <p class="muted">Latest customer journeys ordered by follow-up urgency using the most recent voice-note signal.</p>
+                    </div>
+                    <div class="queue-filters">
+                        <input id="queue-search" type="search" placeholder="Search customer, ID, or transcript">
+                        <select id="queue-status-filter">
+                            <option value="all">All statuses</option>
+                            <option value="awaiting_response">awaiting_response</option>
+                            <option value="monitor">monitor</option>
+                            <option value="review_soon">review_soon</option>
+                            <option value="priority_followup">priority_followup</option>
+                            <option value="reviewed">reviewed</option>
+                        </select>
+                        <select id="queue-campaign-filter">
+                            <option value="all">All campaigns</option>
+                            <option value="elderly_checkin">elderly_checkin</option>
+                            <option value="primary_care">primary_care</option>
+                            <option value="mental_health">mental_health</option>
+                        </select>
+                        <select id="queue-review-outcome-filter">
+                            <option value="all">All review outcomes</option>
+                            <option value="escalated">escalated</option>
+                            <option value="routine_followup">routine_followup</option>
+                            <option value="closed">closed</option>
+                        </select>
+                    </div>
+                    <button id="refresh-queue-button" class="ghost" type="button">Refresh care queue</button>
+                    <div id="queue-slice-summary" class="queue-summary">
+                        All queue items across every campaign are visible.
+                    </div>
+                    <div id="queue-status" class="status"></div>
+                    <div id="queue-list" class="queue-list"></div>
+                </section>
+
+                <section class="card tone-monitor">
+                    <div class="card-head">
+                        <span class="label">Tuner observability</span>
+                        <h2>Workflow Event Timeline</h2>
+                        <p class="muted">Stub analytics events emitted by outreach creation and voice-note submission.</p>
+                    </div>
+                    <button id="refresh-events-button" class="ghost" type="button">Refresh event timeline</button>
+                    <div id="events-status" class="status"></div>
+                    <div id="events-list" class="event-list"></div>
+                </section>
+
+                <section class="card tone-plain">
+                    <div class="card-head">
+                        <span class="label">What the demo shows</span>
+                        <h2>PoC Coverage</h2>
+                    </div>
+                    <ul class="summary-list">
+                        <li>Seeded outreach flows for elderly-care, GP-style primary care, and mental-health check-ins.</li>
+                        <li>Render-ready deployment assets, Tuner observability summaries, and a Twilio-ready SMS outreach stub layered onto the core sponsor APIs.</li>
+                        <li>Voice-note capture, transcript generation, risk bucketing, review-state acknowledgment, and a visible signal feed for live judging.</li>
+                    </ul>
+                </section>
+
+                <section class="card tone-plain">
+                    <div class="card-head">
+                        <span class="label">Demo run</span>
+                        <h2>Suggested Walkthrough</h2>
+                    </div>
+                    <ul class="summary-list">
+                        <li>Start with the seeded demo journeys to show the three healthcare use cases immediately.</li>
+                        <li>Click `Populate demo signals` to fill the queue with low, medium, and high urgency cases for review.</li>
+                        <li>Open the mental-health journey to show the latest signal panel, then use the demo voice note fallback if you want to refresh the case live.</li>
+                        <li>Mark the patient page or spotlight case as reviewed to show the closure step, then return to the console and point to the updated queue plus the Tuner event timeline.</li>
+                    </ul>
+                </section>
+            </aside>
+        </section>
+    </main>
+
+    <script>
+        const form = document.getElementById("upload-form");
+        const uploadStatus = document.getElementById("upload-status");
+        const uploadResult = document.getElementById("upload-result");
+        const createResult = document.getElementById("create-result");
+        const launchContainer = document.getElementById("launch-container");
+        const generateButton = document.getElementById("generate-button");
+        const useDemoVisuals = document.getElementById("use_demo_visuals");
+        const avatarInput = document.getElementById("avatar");
+        const backgroundInput = document.getElementById("background");
+        const visualModeNote = document.getElementById("visual-mode-note");
+        const applyPresetButton = document.getElementById("apply-preset-button");
+        const presetStatus = document.getElementById("preset-status");
+        const presetSummary = document.getElementById("preset-summary");
+        const previewModePill = document.getElementById("preview-mode-pill");
+        const previewHeading = document.getElementById("preview-heading");
+        const previewMeta = document.getElementById("preview-meta");
+        const previewScript = document.getElementById("preview-script");
+        const storyStateBadge = document.getElementById("story-state-badge");
+        const storyStateSummary = document.getElementById("story-state-summary");
+        const storyStateDetail = document.getElementById("story-state-detail");
+        const riskActionList = document.getElementById("risk-action-list");
+        const quickDemoStatus = document.getElementById("quick-demo-status");
+        const quickDemoList = document.getElementById("quick-demo-list");
+        const refreshFeedButton = document.getElementById("refresh-feed-button");
+        const signalFeedStatus = document.getElementById("signal-feed-status");
+        const signalFeedList = document.getElementById("signal-feed-list");
+        const queueCard = document.getElementById("queue-card");
+        const queueSearch = document.getElementById("queue-search");
+        const queueStatusFilter = document.getElementById("queue-status-filter");
+        const queueCampaignFilter = document.getElementById("queue-campaign-filter");
+        const queueReviewOutcomeFilter = document.getElementById("queue-review-outcome-filter");
+        const refreshQueueButton = document.getElementById("refresh-queue-button");
+        const queueSliceSummary = document.getElementById("queue-slice-summary");
+        const queueStatus = document.getElementById("queue-status");
+        const queueList = document.getElementById("queue-list");
+        const launchPitchPathButton = document.getElementById("launch-pitch-path-button");
+        const resetLaunchPitchPathButton = document.getElementById("reset-launch-pitch-path-button");
+        const openStrongestCaseButton = document.getElementById("open-strongest-case-button");
+        const seedSignalsButton = document.getElementById("seed-signals-button");
+        const resetDemoButton = document.getElementById("reset-demo-button");
+        const refreshDashboardButton = document.getElementById("refresh-dashboard-button");
+        const autoRefreshToggle = document.getElementById("auto-refresh-toggle");
+        const summaryStatus = document.getElementById("summary-status");
+        const renderStatusValue = document.getElementById("render-status-value");
+        const renderStatusDetail = document.getElementById("render-status-detail");
+        const tunerStatusValue = document.getElementById("tuner-status-value");
+        const tunerStatusDetail = document.getElementById("tuner-status-detail");
+        const twilioStatusValue = document.getElementById("twilio-status-value");
+        const twilioStatusDetail = document.getElementById("twilio-status-detail");
+        const twilioPhoneNumber = document.getElementById("twilio-phone-number");
+        const sendStrongestCaseSmsButton = document.getElementById("send-strongest-case-sms-button");
+        const refreshSponsorButton = document.getElementById("refresh-sponsor-button");
+        const twilioSimStatus = document.getElementById("twilio-sim-status");
+        const simulateTwilioStatusButton = document.getElementById("simulate-twilio-status-button");
+        const progressTwilioStatusButton = document.getElementById("progress-twilio-status-button");
+        const retryTwilioDeliveryButton = document.getElementById("retry-twilio-delivery-button");
+        const prepareTwilioFallbackButton = document.getElementById("prepare-twilio-fallback-button");
+        const twilioDeliveryStatus = document.getElementById("twilio-delivery-status");
+        const twilioDeliveryList = document.getElementById("twilio-delivery-list");
+        const twilioResourceStatus = document.getElementById("twilio-resource-status");
+        const twilioResourcePreview = document.getElementById("twilio-resource-preview");
+        const twilioMessageListStatus = document.getElementById("twilio-message-list-status");
+        const twilioMessageListPreview = document.getElementById("twilio-message-list-preview");
+        const twilioFallbackStatus = document.getElementById("twilio-fallback-status");
+        const twilioFallbackList = document.getElementById("twilio-fallback-list");
+        const reviewOutcomeStatus = document.getElementById("review-outcome-status");
+        const reviewOutcomeList = document.getElementById("review-outcome-list");
+        const presenterNoteBadge = document.getElementById("presenter-note-badge");
+        const copyDemoScriptButton = document.getElementById("copy-demo-script-button");
+        const downloadDemoBriefButton = document.getElementById("download-demo-brief-button");
+        const presenterNoteSummary = document.getElementById("presenter-note-summary");
+        const presenterNoteLine = document.getElementById("presenter-note-line");
+        const presenterNoteClick = document.getElementById("presenter-note-click");
+        const presenterNoteWhy = document.getElementById("presenter-note-why");
+        const refreshEventsButton = document.getElementById("refresh-events-button");
+        const eventsStatus = document.getElementById("events-status");
+        const eventsList = document.getElementById("events-list");
+        const spotlightStatus = document.getElementById("spotlight-status");
+        const spotlightRisk = document.getElementById("spotlight-risk");
+        const spotlightName = document.getElementById("spotlight-name");
+        const spotlightMeta = document.getElementById("spotlight-meta");
+        const spotlightAction = document.getElementById("spotlight-action");
+        const spotlightTranscript = document.getElementById("spotlight-transcript");
+        const toastHost = document.getElementById("toast-host");
+        const reviewerNameInput = document.getElementById("reviewer-name-input");
+        const reviewOutcomeInput = document.getElementById("review-outcome-input");
+        const reviewNoteInput = document.getElementById("review-note-input");
+        const spotlightReviewButton = document.getElementById("spotlight-review-button");
+        const spotlightLoadButton = document.getElementById("spotlight-load-button");
+        const spotlightLink = document.getElementById("spotlight-link");
+        const metricVideoJobs = document.getElementById("metric-video-jobs");
+        const metricVideoDetail = document.getElementById("metric-video-detail");
+        const metricVoiceNotes = document.getElementById("metric-voice-notes");
+        const metricNoteDetail = document.getElementById("metric-note-detail");
+        const metricHighRisk = document.getElementById("metric-high-risk");
+        const metricRiskDetail = document.getElementById("metric-risk-detail");
+        const metricLatestUpdate = document.getElementById("metric-latest-update");
+        const metricLatestDetail = document.getElementById("metric-latest-detail");
+        const presetFieldNames = ["customer_id", "name", "plan", "days_to_expiry"];
+        const campaignPresets = {
+            elderly_checkin: {
+                customer_id: "elderly_custom_001",
+                name: "Margaret Hill",
+                plan: "care-home-weekly",
+                days_to_expiry: "3",
+            },
+            primary_care: {
+                customer_id: "primary_custom_001",
+                name: "Daniel Price",
+                plan: "blood-pressure-review",
+                days_to_expiry: "5",
+            },
+            mental_health: {
+                customer_id: "mental_custom_001",
+                name: "Sofia Khan",
+                plan: "weekly-wellbeing",
+                days_to_expiry: "1",
+            },
+        };
+        const queueFollowUpPresets = {
+            awaiting_response: {
+                days_to_expiry: "1",
+                plan_by_campaign: {
+                    elderly_checkin: "first-response-reminder",
+                    primary_care: "check-in-reminder",
+                    mental_health: "wellbeing-response-reminder",
+                },
+            },
+            monitor: {
+                days_to_expiry: "5",
+                plan_by_campaign: {
+                    elderly_checkin: "routine-wellbeing-follow-up",
+                    primary_care: "routine-clinic-follow-up",
+                    mental_health: "routine-wellbeing-follow-up",
+                },
+            },
+            review_soon: {
+                days_to_expiry: "2",
+                plan_by_campaign: {
+                    elderly_checkin: "nurse-review-check-in",
+                    primary_care: "near-term-clinician-review",
+                    mental_health: "accelerated-wellbeing-follow-up",
+                },
+            },
+            priority_followup: {
+                days_to_expiry: "0",
+                plan_by_campaign: {
+                    elderly_checkin: "priority-care-team-outreach",
+                    primary_care: "urgent-clinician-review",
+                    mental_health: "same-day-wellbeing-follow-up",
+                },
+            },
+            reviewed: {
+                days_to_expiry: "7",
+                plan_by_campaign: {
+                    elderly_checkin: "post-review-check-in",
+                    primary_care: "post-review-clinic-follow-up",
+                    mental_health: "post-review-wellbeing-check-in",
+                },
+            },
+        };
+        const statusActionGuide = {
+            awaiting_response: {
+                risk_bucket: null,
+                status_label: "awaiting response",
+                summary: "No voice note has been submitted yet. Prepare a reminder outreach to keep this patient journey moving.",
+                action: "Prompt a reply and keep this case visible until the first signal arrives.",
+                days_to_expiry: "1",
+                plan_by_campaign: queueFollowUpPresets.awaiting_response.plan_by_campaign,
+            },
+            monitor: {
+                risk_bucket: "low",
+                status_label: "monitor",
+                summary: "Low biomarker concern detected. Keep this case in the standard monitoring queue and continue routine follow-up.",
+                action: "Maintain routine outreach and review the next signal before changing the plan.",
+                days_to_expiry: "5",
+                plan_by_campaign: queueFollowUpPresets.monitor.plan_by_campaign,
+            },
+            review_soon: {
+                risk_bucket: "medium",
+                status_label: "review soon",
+                summary: "Medium biomarker concern detected. Queue a nearer-term follow-up so the care team can check in again soon.",
+                action: "Move this case into the near-term review list and schedule the next touchpoint soon.",
+                days_to_expiry: "2",
+                plan_by_campaign: queueFollowUpPresets.review_soon.plan_by_campaign,
+            },
+            priority_followup: {
+                risk_bucket: "high",
+                status_label: "priority follow-up",
+                summary: "High biomarker concern detected. Escalate this case for prompt review and an active follow-up plan.",
+                action: "Escalate for clinician review and prepare the next outreach immediately.",
+                days_to_expiry: "0",
+                plan_by_campaign: queueFollowUpPresets.priority_followup.plan_by_campaign,
+            },
+            reviewed: {
+                risk_bucket: null,
+                status_label: "reviewed",
+                summary: "The care team has acknowledged this case. Keep the context visible and reopen automatically if a newer voice signal arrives.",
+                action: "Document the review outcome, keep the case visible in history, and schedule a calmer follow-up if needed.",
+                days_to_expiry: "7",
+                plan_by_campaign: queueFollowUpPresets.reviewed.plan_by_campaign,
+            },
+        };
+        let latestOverview = null;
+        let autoRefreshTimer = null;
+        let previewTimer = null;
+        let lastAppliedPreset = null;
+        let applyingPreset = false;
+        let activeTwilioMessageSid = null;
+        const REVIEWER_NAME_STORAGE_KEY = "signal-over-noise-reviewer-name";
+        const REVIEW_OUTCOME_STORAGE_KEY = "signal-over-noise-review-outcome";
+
+        function videoPageUrl(customerId, campaignType) {
+            const params = new URLSearchParams({
+                customer_id: customerId,
+                campaign_type: campaignType,
+            });
+            return `/video_page?${params.toString()}`;
+        }
+
+        function prettyCampaignName(campaignType) {
+            return campaignType.replaceAll("_", " ");
+        }
+
+        function riskClass(riskBucket) {
+            return `risk-pill risk-${riskBucket}`;
+        }
+
+        function formatCampaignBreakdown(counts) {
+            return Object.entries(counts)
+                .map(([campaign, count]) => `${prettyCampaignName(campaign)}: ${count}`)
+                .join(" · ");
+        }
+
+        function prettyEventType(eventType) {
+            return eventType.replaceAll("_", " ");
+        }
+
+        function prettyStatus(status) {
+            return status.replaceAll("_", " ");
+        }
+
+        function prettyOutcome(outcome) {
+            return outcome ? outcome.replaceAll("_", " ") : "not set";
+        }
+
+        function readStoredReviewerName() {
+            try {
+                return window.localStorage.getItem(REVIEWER_NAME_STORAGE_KEY) || "";
+            } catch (error) {
+                return "";
+            }
+        }
+
+        function writeStoredReviewerName(value) {
+            try {
+                if (value) {
+                    window.localStorage.setItem(REVIEWER_NAME_STORAGE_KEY, value);
+                } else {
+                    window.localStorage.removeItem(REVIEWER_NAME_STORAGE_KEY);
+                }
+            } catch (error) {
+                // Ignore storage errors in demo mode.
+            }
+        }
+
+        function readStoredReviewOutcome() {
+            try {
+                return window.localStorage.getItem(REVIEW_OUTCOME_STORAGE_KEY) || "";
+            } catch (error) {
+                return "";
+            }
+        }
+
+        function writeStoredReviewOutcome(value) {
+            try {
+                if (value) {
+                    window.localStorage.setItem(REVIEW_OUTCOME_STORAGE_KEY, value);
+                } else {
+                    window.localStorage.removeItem(REVIEW_OUTCOME_STORAGE_KEY);
+                }
+            } catch (error) {
+                // Ignore storage errors in demo mode.
+            }
+        }
+
+        function loadReviewDraftPreferences() {
+            const storedReviewerName = readStoredReviewerName();
+            if (reviewerNameInput && storedReviewerName) {
+                reviewerNameInput.value = storedReviewerName;
+            }
+            const storedReviewOutcome = readStoredReviewOutcome();
+            if (reviewOutcomeInput && storedReviewOutcome) {
+                reviewOutcomeInput.value = storedReviewOutcome;
+            }
+        }
+
+        function currentReviewDraft(item) {
+            const reviewedBy = reviewerNameInput?.value?.trim() || "";
+            const outcome = reviewOutcomeInput?.value || "routine_followup";
+            const note = reviewNoteInput?.value?.trim()
+                || (item?.risk_bucket
+                    ? `Reviewed after ${item.risk_bucket} risk signal.`
+                    : "Reviewed from the care ops dashboard.");
+            return {
+                reviewedBy,
+                outcome,
+                note,
+            };
+        }
+
+        function reviewSummary(item) {
+            if (!item?.reviewed_at) {
+                return "";
+            }
+
+            const timestamp = new Date(item.reviewed_at).toLocaleString();
+            const reviewer = item.reviewed_by || "care team";
+            const outcome = item.review_outcome ? ` · outcome ${prettyOutcome(item.review_outcome)}` : "";
+            const note = item.review_note ? ` · ${item.review_note}` : "";
+            return `Reviewed ${timestamp} by ${reviewer}${outcome}${note}`;
+        }
+
+        function pluralize(count, noun) {
+            return `${count} ${noun}${count === 1 ? "" : "s"}`;
+        }
+
+        function wireStatusLiveRegions() {
+            document.querySelectorAll(".status").forEach((element) => {
+                element.setAttribute("role", "status");
+                element.setAttribute("aria-live", "polite");
+            });
+        }
+
+        function showToast(message, tone = "success") {
+            if (!toastHost) {
+                return;
+            }
+
+            const toast = document.createElement("div");
+            toast.className = `toast toast-${tone}`;
+            toast.textContent = message;
+            toastHost.appendChild(toast);
+            window.setTimeout(() => toast.remove(), 2600);
+        }
+
+        function selectedCampaignPreset() {
+            return campaignPresets[form.elements.campaign_type.value] || null;
+        }
+
+        function describePreset(campaignType, preset) {
+            return `${prettyCampaignName(campaignType)} preset · ${preset.name} · ${preset.plan} · ${preset.days_to_expiry} day follow-up · ${preset.customer_id}`;
+        }
+
+        function statusGuide(status) {
+            return statusActionGuide[status] || statusActionGuide.awaiting_response;
+        }
+
+        function queueFollowUpDetails(item) {
+            const statusPreset = queueFollowUpPresets[item.status] || queueFollowUpPresets.awaiting_response;
+            const selectedPlan = statusPreset.plan_by_campaign[item.campaign_type] || selectedCampaignPreset()?.plan || "follow-up";
+            return {
+                plan: selectedPlan,
+                days_to_expiry: statusPreset.days_to_expiry,
+            };
+        }
+
+        async function markCaseReviewed(item, sourceLabel) {
+            if (item.status === "awaiting_response") {
+                summaryStatus.textContent = `${item.name} has not submitted a voice note yet. Capture a signal before marking the case reviewed.`;
+                return;
+            }
+
+            const draft = currentReviewDraft(item);
+            if (!draft.reviewedBy) {
+                summaryStatus.textContent = "Add a reviewer name before marking the case reviewed.";
+                reviewerNameInput?.focus();
+                return;
+            }
+
+            summaryStatus.textContent = `Marking ${item.name} as reviewed from ${sourceLabel}...`;
+            writeStoredReviewerName(draft.reviewedBy);
+            writeStoredReviewOutcome(draft.outcome);
+
+            try {
+                const response = await fetch("/api/v1/video/mark_reviewed", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        customer_id: item.customer_id,
+                        campaign_type: item.campaign_type,
+                        reviewed_by: draft.reviewedBy,
+                        outcome: draft.outcome,
+                        source: sourceLabel.replaceAll(" ", "_"),
+                        note: draft.note,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw await buildApiError(response, "Could not mark this case as reviewed.");
+                }
+
+                await loadDashboardOverview();
+                summaryStatus.textContent = `${item.name} was marked reviewed from ${sourceLabel}.`;
+                showToast(`${item.name} marked reviewed.`, "success");
+            } catch (error) {
+                summaryStatus.textContent = error.message;
+                showToast(error.message, "error");
+            }
+        }
+
+        function renderRiskActionGuide() {
+            if (!riskActionList) {
+                return;
+            }
+
+            riskActionList.replaceChildren();
+            const activeStatus = queueStatusFilter?.value || "all";
+
+            Object.entries(statusActionGuide).forEach(([status, guide]) => {
+                const wrapper = document.createElement("div");
+                const top = document.createElement("div");
+                const title = document.createElement("strong");
+                const actions = document.createElement("div");
+                const statusPill = document.createElement("span");
+                const riskPill = document.createElement("span");
+                const summary = document.createElement("div");
+                const meta = document.createElement("div");
+
+                wrapper.className = `legend-item${activeStatus === status ? " is-active" : ""}`;
+                wrapper.tabIndex = 0;
+                wrapper.setAttribute("role", "button");
+                wrapper.setAttribute("aria-pressed", activeStatus === status ? "true" : "false");
+                top.className = "legend-top";
+                actions.className = "legend-actions";
+                statusPill.className = `status-pill status-${status}`;
+                statusPill.textContent = guide.status_label;
+                title.textContent = guide.summary;
+                summary.className = "muted";
+                summary.textContent = guide.action;
+                meta.className = "muted";
+
+                if (guide.risk_bucket) {
+                    riskPill.className = riskClass(guide.risk_bucket);
+                    riskPill.textContent = `${guide.risk_bucket} risk`;
+                    actions.appendChild(riskPill);
+                }
+
+                actions.appendChild(statusPill);
+                meta.textContent = `Suggested timing: ${guide.days_to_expiry} day${guide.days_to_expiry === "1" ? "" : "s"} · Mental health plan: ${guide.plan_by_campaign.mental_health} · Click to ${activeStatus === status ? "clear" : "show"} this queue slice`;
+
+                top.appendChild(title);
+                top.appendChild(actions);
+                wrapper.appendChild(top);
+                wrapper.appendChild(summary);
+                wrapper.appendChild(meta);
+                wrapper.addEventListener("click", () => {
+                    focusQueueStatus(status);
+                });
+                wrapper.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        focusQueueStatus(status);
+                    }
+                });
+                riskActionList.appendChild(wrapper);
+            });
+        }
+
+        function focusQueueStatus(status) {
+            const nextStatus = queueStatusFilter.value === status ? "all" : status;
+            queueStatusFilter.value = nextStatus;
+            if (nextStatus !== "reviewed" && queueReviewOutcomeFilter) {
+                queueReviewOutcomeFilter.value = "all";
+            }
+            queueSearch.value = "";
+            queueCampaignFilter.value = "all";
+
+            if (latestOverview) {
+                renderCareQueue(latestOverview.care_queue);
+            } else {
+                renderRiskActionGuide();
+            }
+
+            queueCard?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }
+
+        function focusReviewOutcome(outcome) {
+            const nextOutcome = queueStatusFilter?.value === "reviewed" && queueReviewOutcomeFilter?.value === outcome
+                ? "all"
+                : outcome;
+
+            if (queueReviewOutcomeFilter) {
+                queueReviewOutcomeFilter.value = nextOutcome;
+            }
+            if (queueStatusFilter) {
+                queueStatusFilter.value = nextOutcome === "all" ? "all" : "reviewed";
+            }
+            queueSearch.value = "";
+            queueCampaignFilter.value = "all";
+
+            if (latestOverview) {
+                renderCareQueue(latestOverview.care_queue);
+            } else {
+                renderReviewOutcomeSnapshot(null);
+            }
+
+            queueCard?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }
+
+        function markPresetFieldEdited(event) {
+            if (applyingPreset) {
+                return;
+            }
+
+            event.target.dataset.userEdited = "true";
+        }
+
+        function applyCampaignPreset({ force = false } = {}) {
+            const campaignType = form.elements.campaign_type.value;
+            const preset = selectedCampaignPreset();
+
+            if (!preset) {
+                return;
+            }
+
+            let updatedCount = 0;
+            let preservedCount = 0;
+            applyingPreset = true;
+
+            presetFieldNames.forEach((fieldName) => {
+                const input = form.elements[fieldName];
+                const nextValue = String(preset[fieldName] ?? "");
+                const previousPresetValue = lastAppliedPreset ? String(lastAppliedPreset[fieldName] ?? "") : "";
+                const currentValue = input.value;
+                const shouldUpdate = force
+                    || input.dataset.userEdited !== "true"
+                    || currentValue === ""
+                    || currentValue === previousPresetValue;
+
+                if (shouldUpdate) {
+                    if (currentValue !== nextValue) {
+                        updatedCount += 1;
+                    }
+                    input.value = nextValue;
+                    input.dataset.userEdited = "false";
+                } else {
+                    preservedCount += 1;
+                }
+            });
+
+            applyingPreset = false;
+            lastAppliedPreset = { ...preset };
+            presetSummary.textContent = describePreset(campaignType, preset);
+
+            if (force) {
+                presetStatus.textContent = `Applied the ${prettyCampaignName(campaignType)} preset across the full custom setup form.`;
+            } else if (updatedCount > 0 && preservedCount > 0) {
+                presetStatus.textContent = `Updated ${pluralize(updatedCount, "field")} and preserved ${pluralize(preservedCount, "custom value")} for ${prettyCampaignName(campaignType)}.`;
+            } else if (updatedCount > 0) {
+                presetStatus.textContent = `Updated ${pluralize(updatedCount, "recommended field")} for ${prettyCampaignName(campaignType)}.`;
+            } else {
+                presetStatus.textContent = `Kept your custom values. Use "Apply campaign preset" to reset the form to the ${prettyCampaignName(campaignType)} defaults.`;
+            }
+
+            scheduleScriptPreview();
+        }
+
+        function applyDraftFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const hasDraftContext = [
+                "customer_id",
+                "name",
+                "campaign_type",
+                "plan",
+                "days_to_expiry",
+                "source",
+            ].some((key) => params.has(key));
+
+            if (!hasDraftContext) {
+                return false;
+            }
+
+            const campaignType = params.get("campaign_type");
+            if (campaignType && campaignPresets[campaignType]) {
+                form.elements.campaign_type.value = campaignType;
+            }
+
+            applyCampaignPreset({ force: true });
+
+            presetFieldNames.forEach((fieldName) => {
+                const value = params.get(fieldName);
+                if (value !== null && value !== "") {
+                    const input = form.elements[fieldName];
+                    input.value = value;
+                    input.dataset.userEdited = "true";
+                }
+            });
+
+            const sourceLabel = (params.get("source") || "external workflow").replaceAll("_", " ");
+            const riskBucket = params.get("risk_bucket");
+            const customerName = form.elements.name.value || "this patient";
+            const riskDetail = riskBucket ? ` · ${riskBucket} risk` : "";
+            const timingValue = form.elements.days_to_expiry.value || "0";
+            const timingLabel = `${timingValue} day${timingValue === "1" ? "" : "s"} follow-up`;
+
+            presetSummary.textContent = `${customerName} loaded from ${sourceLabel}${riskDetail} · ${form.elements.plan.value || "follow-up"} · ${timingLabel}`;
+            presetStatus.textContent = `Loaded a same-context follow-up draft from ${sourceLabel}. Review the preview and adjust anything you want before creating the next outreach.`;
+            uploadStatus.textContent = `Custom setup preloaded for ${customerName}.`;
+            uploadResult.textContent = "";
+            createResult.textContent = "";
+            launchContainer.textContent = "";
+            scheduleScriptPreview();
+            return true;
+        }
+
+        function loadQueueItemIntoForm(item, sourceLabel) {
+            form.elements.campaign_type.value = item.campaign_type;
+            applyCampaignPreset({ force: true });
+
+            const recommendation = queueFollowUpDetails(item);
+            const values = {
+                customer_id: item.customer_id,
+                name: item.name,
+                plan: recommendation.plan,
+                days_to_expiry: recommendation.days_to_expiry,
+            };
+
+            Object.entries(values).forEach(([fieldName, value]) => {
+                const input = form.elements[fieldName];
+                input.value = String(value ?? "");
+                input.dataset.userEdited = "true";
+            });
+
+            presetSummary.textContent = `${item.name} loaded from ${sourceLabel} · ${prettyStatus(item.status)} · ${recommendation.plan} · ${pluralize(Number(recommendation.days_to_expiry), "day")} follow-up`;
+            presetStatus.textContent = `Loaded ${item.name} from the ${sourceLabel} into custom setup with a ${prettyStatus(item.status)} follow-up recommendation.`;
+            uploadStatus.textContent = `Follow-up draft ready for ${item.name}. Review the preview, then create a fresh outreach job when you are ready.`;
+            uploadResult.textContent = "";
+            createResult.textContent = "";
+            launchContainer.textContent = "";
+            scheduleScriptPreview();
+            form.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }
+
+        function syncVisualMode() {
+            const demoMode = Boolean(useDemoVisuals?.checked);
+
+            if (avatarInput) {
+                avatarInput.disabled = demoMode;
+                avatarInput.required = !demoMode;
+                if (demoMode) {
+                    avatarInput.value = "";
+                }
+            }
+
+            if (backgroundInput) {
+                backgroundInput.disabled = demoMode;
+                backgroundInput.required = !demoMode;
+                if (demoMode) {
+                    backgroundInput.value = "";
+                }
+            }
+
+            if (visualModeNote) {
+                visualModeNote.textContent = demoMode
+                    ? "Demo visuals mode skips file upload and creates a personalized outreach job immediately."
+                    : "Upload avatar and background assets to attach campaign-specific visuals to the generated outreach job.";
+            }
+
+            if (generateButton) {
+                generateButton.textContent = demoMode
+                    ? "Create video with demo visuals"
+                    : "Upload media and create video";
+            }
+
+            if (previewModePill) {
+                previewModePill.className = `mode-pill ${demoMode ? "mode-demo" : "mode-uploaded"}`;
+                previewModePill.textContent = demoMode ? "demo visuals" : "uploaded visuals";
+            }
+        }
+
+        async function loadScriptPreview() {
+            const nameValue = form.elements.name.value.trim();
+            const campaignTypeValue = form.elements.campaign_type.value;
+            const planValue = form.elements.plan.value.trim();
+            const daysToExpiryValue = form.elements.days_to_expiry.value.trim();
+
+            if (!nameValue || !campaignTypeValue) {
+                previewHeading.textContent = "Personalized message preview";
+                previewMeta.textContent = "Add a customer name and campaign to preview the generated outreach message.";
+                previewScript.textContent = "Preview unavailable until the required form fields are filled in.";
+                return;
+            }
+
+            previewHeading.textContent = `${nameValue} · ${prettyCampaignName(campaignTypeValue)}`;
+            previewMeta.textContent = "Refreshing preview...";
+
+            const params = new URLSearchParams({
+                name: nameValue,
+                campaign_type: campaignTypeValue,
+            });
+
+            if (planValue) {
+                params.set("plan", planValue);
+            }
+
+            if (daysToExpiryValue) {
+                params.set("days_to_expiry", daysToExpiryValue);
+            }
+
+            try {
+                const response = await fetch(`/api/v1/video/script_preview?${params.toString()}`);
+                if (!response.ok) {
+                    throw new Error("Could not load outreach preview.");
+                }
+
+                const payload = await response.json();
+                const mode = useDemoVisuals?.checked ? "Using demo visuals" : "Using uploaded visuals";
+                const detailBits = [mode];
+
+                if (payload.plan) {
+                    detailBits.push(`plan: ${payload.plan}`);
+                }
+
+                if (payload.days_to_expiry !== null && payload.days_to_expiry !== undefined) {
+                    detailBits.push(`next touchpoint in ${payload.days_to_expiry} day${payload.days_to_expiry === 1 ? "" : "s"}`);
+                }
+
+                previewMeta.textContent = detailBits.join(" · ");
+                previewScript.textContent = payload.script;
+            } catch (error) {
+                previewMeta.textContent = "Preview unavailable.";
+                previewScript.textContent = error.message;
+            }
+        }
+
+        function scheduleScriptPreview() {
+            if (previewTimer) {
+                window.clearTimeout(previewTimer);
+            }
+
+            previewTimer = window.setTimeout(() => {
+                loadScriptPreview();
+            }, 180);
+        }
+
+        function currentQueueFilters() {
+            return {
+                query: (queueSearch?.value || "").trim().toLowerCase(),
+                status: queueStatusFilter?.value || "all",
+                campaign: queueCampaignFilter?.value || "all",
+                outcome: queueReviewOutcomeFilter?.value || "all",
+            };
+        }
+
+        function renderStoryStateBanner() {
+            if (!storyStateBadge || !storyStateSummary || !storyStateDetail) {
+                return;
+            }
+
+            if (!latestOverview) {
+                storyStateBadge.textContent = "Loading state";
+                storyStateSummary.textContent = "Reading the demo store and queue state...";
+                storyStateDetail.textContent = "This banner updates as signals arrive and as the active queue slice changes.";
+                return;
+            }
+
+            const filters = currentQueueFilters();
+            const demoJobsCount = latestOverview.demo_jobs.length;
+            const totalSignals = latestOverview.voice_summary.total_notes;
+            const highRiskCount = latestOverview.voice_summary.high_risk_count;
+            const filteredItems = filteredQueueItems(latestOverview.care_queue);
+            const campaignLabel = filters.campaign === "all"
+                ? "all campaigns"
+                : prettyCampaignName(filters.campaign);
+            const queryDetail = filters.query ? ` matching "${filters.query}"` : "";
+            const outcomeLabel = filters.outcome !== "all" ? prettyOutcome(filters.outcome) : "";
+
+            if (totalSignals === 0) {
+                storyStateBadge.textContent = "Setup ready";
+                storyStateSummary.textContent = `${pluralize(demoJobsCount, "seeded journey")} are ready. No voice-note signals have been captured yet.`;
+                storyStateDetail.textContent = "Populate demo signals or open a seeded journey to capture the first response.";
+                return;
+            }
+
+            if (filters.outcome !== "all") {
+                storyStateBadge.textContent = `${outcomeLabel} reviews`;
+                storyStateSummary.textContent = `Viewing ${pluralize(filteredItems.length, `${outcomeLabel} reviewed case`)} in ${campaignLabel}${queryDetail}.`;
+                storyStateDetail.textContent = "This slice shows how the care team resolved previously reviewed cases, which makes the outcome analytics actionable rather than passive.";
+                return;
+            }
+
+            if (filters.status !== "all") {
+                const guide = statusGuide(filters.status);
+                const sliceLabel = guide.risk_bucket ? `${guide.risk_bucket} risk` : guide.status_label;
+                storyStateBadge.textContent = `${guide.status_label} slice`;
+                storyStateSummary.textContent = `Viewing ${pluralize(filteredItems.length, `${sliceLabel} case`)} in ${campaignLabel}${queryDetail}.`;
+                storyStateDetail.textContent = `Suggested action: ${guide.action} Demo store state: ${pluralize(totalSignals, "signal")} captured, including ${pluralize(highRiskCount, "high-risk case")}.`;
+                return;
+            }
+
+            if (highRiskCount > 0) {
+                storyStateBadge.textContent = "Escalation live";
+                storyStateSummary.textContent = `${pluralize(totalSignals, "signal")} captured across ${pluralize(demoJobsCount, "seeded journey")}, including ${pluralize(highRiskCount, "high-risk case")}.`;
+                storyStateDetail.textContent = `Current queue view shows ${pluralize(filteredItems.length, "case")} in ${campaignLabel}${queryDetail}. Use the guide or spotlight to move into follow-up.`;
+                return;
+            }
+
+            storyStateBadge.textContent = "Signals live";
+            storyStateSummary.textContent = `${pluralize(totalSignals, "signal")} captured across ${pluralize(demoJobsCount, "seeded journey")}.`;
+            storyStateDetail.textContent = `No high-risk cases are active right now. Current queue view shows ${pluralize(filteredItems.length, "case")} in ${campaignLabel}${queryDetail}.`;
+        }
+
+        function filteredQueueItems(items) {
+            const filters = currentQueueFilters();
+            return items.filter((item) => {
+                const haystack = [
+                    item.name,
+                    item.customer_id,
+                    item.latest_transcript || "",
+                ].join(" ").toLowerCase();
+
+                const matchesQuery = !filters.query || haystack.includes(filters.query);
+                const matchesStatus = filters.status === "all" || item.status === filters.status;
+                const matchesCampaign = filters.campaign === "all" || item.campaign_type === filters.campaign;
+                const matchesOutcome = filters.outcome === "all"
+                    || (item.review_active && item.review_outcome === filters.outcome);
+                return matchesQuery && matchesStatus && matchesCampaign && matchesOutcome;
+            });
+        }
+
+        function currentStrongestCase() {
+            if (!latestOverview) {
+                return null;
+            }
+
+            return filteredQueueItems(latestOverview.care_queue)[0] || null;
+        }
+
+        function updateStrongestCaseAction() {
+            if (!openStrongestCaseButton) {
+                if (sendStrongestCaseSmsButton) {
+                    sendStrongestCaseSmsButton.disabled = true;
+                    sendStrongestCaseSmsButton.textContent = "Send strongest-case SMS";
+                }
+                return;
+            }
+
+            const leadItem = currentStrongestCase();
+            if (!leadItem) {
+                openStrongestCaseButton.disabled = true;
+                openStrongestCaseButton.textContent = "Open strongest case";
+                if (sendStrongestCaseSmsButton) {
+                    sendStrongestCaseSmsButton.disabled = true;
+                    sendStrongestCaseSmsButton.textContent = "Send strongest-case SMS";
+                }
+                return;
+            }
+
+            openStrongestCaseButton.disabled = false;
+            openStrongestCaseButton.textContent = `Open strongest case: ${leadItem.name}`;
+            if (sendStrongestCaseSmsButton) {
+                sendStrongestCaseSmsButton.disabled = false;
+                sendStrongestCaseSmsButton.textContent = `Send SMS to ${leadItem.name}`;
+            }
+        }
+
+        function renderReviewOutcomeSnapshot(reviewSummary) {
+            if (!reviewOutcomeStatus || !reviewOutcomeList) {
+                return;
+            }
+
+            reviewOutcomeList.replaceChildren();
+            if (!reviewSummary || reviewSummary.total_reviews === 0) {
+                reviewOutcomeStatus.textContent = "No review outcomes recorded yet. Capture a signal and mark a case reviewed to populate this snapshot.";
+                return;
+            }
+
+            const maxCount = Math.max(...Object.values(reviewSummary.outcome_counts), 1);
+            const activeOutcome = queueStatusFilter?.value === "reviewed"
+                ? (queueReviewOutcomeFilter?.value || "all")
+                : "all";
+            Object.entries(reviewSummary.outcome_counts).forEach(([outcome, count]) => {
+                const row = document.createElement("div");
+                const label = document.createElement("strong");
+                const track = document.createElement("div");
+                const fill = document.createElement("div");
+                const value = document.createElement("span");
+
+                row.className = `review-outcome-row${activeOutcome === outcome ? " is-active" : ""}`;
+                row.tabIndex = 0;
+                row.setAttribute("role", "button");
+                row.setAttribute("aria-pressed", activeOutcome === outcome ? "true" : "false");
+                label.textContent = prettyOutcome(outcome);
+                track.className = "review-outcome-track";
+                fill.className = "review-outcome-fill";
+                fill.style.width = `${(count / maxCount) * 100}%`;
+                value.className = "muted";
+                value.textContent = String(count);
+                row.addEventListener("click", () => {
+                    focusReviewOutcome(outcome);
+                });
+                row.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        focusReviewOutcome(outcome);
+                    }
+                });
+
+                track.appendChild(fill);
+                row.appendChild(label);
+                row.appendChild(track);
+                row.appendChild(value);
+                reviewOutcomeList.appendChild(row);
+            });
+
+            if (activeOutcome !== "all") {
+                reviewOutcomeStatus.textContent = `Focused on reviewed ${prettyOutcome(activeOutcome)} cases. Click the active row again to clear this drill-down.`;
+                return;
+            }
+
+            reviewOutcomeStatus.textContent = reviewSummary.latest_reviewed_at
+                ? `Showing ${reviewSummary.total_reviews} review outcome${reviewSummary.total_reviews === 1 ? "" : "s"} · latest review ${new Date(reviewSummary.latest_reviewed_at).toLocaleString()}`
+                : `Showing ${reviewSummary.total_reviews} review outcome${reviewSummary.total_reviews === 1 ? "" : "s"}.`;
+        }
+
+        async function loadTwilioResourcePreview(messageSid, label = "latest Twilio delivery") {
+            if (!twilioResourceStatus || !twilioResourcePreview) {
+                return;
+            }
+
+            if (!messageSid) {
+                activeTwilioMessageSid = null;
+                twilioResourceStatus.textContent = "No Twilio message resource loaded yet.";
+                twilioResourcePreview.textContent = "No Twilio message resource loaded yet.";
+                return;
+            }
+
+            activeTwilioMessageSid = messageSid;
+            twilioResourceStatus.textContent = `Loading ${label} message resource...`;
+
+            try {
+                const params = new URLSearchParams({ message_sid: messageSid });
+                const response = await fetch(`/api/v1/video/twilio_message?${params.toString()}`);
+                if (!response.ok) {
+                    throw new Error("Could not load the Twilio message resource.");
+                }
+
+                const payload = await response.json();
+                twilioResourcePreview.textContent = JSON.stringify(payload, null, 2);
+                twilioResourceStatus.textContent = `Showing Twilio-style Message resource ${payload.sid} from ${label}.`;
+            } catch (error) {
+                twilioResourceStatus.textContent = error.message;
+                twilioResourcePreview.textContent = "Twilio message resource unavailable.";
+            }
+        }
+
+        async function loadTwilioMessageListPreview() {
+            if (!twilioMessageListStatus || !twilioMessageListPreview) {
+                return;
+            }
+
+            twilioMessageListStatus.textContent = "Loading Twilio-style message list...";
+
+            try {
+                const params = new URLSearchParams({ limit: "6" });
+                const response = await fetch(`/api/v1/video/twilio_messages?${params.toString()}`);
+                if (!response.ok) {
+                    throw new Error("Could not load the Twilio message list.");
+                }
+
+                const payload = await response.json();
+                twilioMessageListPreview.textContent = JSON.stringify(payload, null, 2);
+                twilioMessageListStatus.textContent = payload.messages.length === 0
+                    ? "No Twilio message resources are available yet."
+                    : `Showing ${pluralize(payload.messages.length, "Twilio message resource")} in the current sponsor-side list view.`;
+            } catch (error) {
+                twilioMessageListStatus.textContent = error.message;
+                twilioMessageListPreview.textContent = "Twilio message list unavailable.";
+            }
+        }
+
+        function selectedSponsorTwilioMessageSid() {
+            if (activeTwilioMessageSid) {
+                return activeTwilioMessageSid;
+            }
+
+            return latestOverview?.recent_outreach_deliveries?.[0]?.provider_message_id || null;
+        }
+
+        function selectedSponsorTwilioDelivery() {
+            const deliveries = latestOverview?.recent_outreach_deliveries || [];
+            if (!deliveries.length) {
+                return null;
+            }
+
+            if (activeTwilioMessageSid) {
+                return deliveries.find((delivery) => delivery.provider_message_id === activeTwilioMessageSid) || deliveries[0];
+            }
+
+            return deliveries[0];
+        }
+
+        function waitForDemoStep(milliseconds = 260) {
+            return new Promise((resolve) => {
+                window.setTimeout(resolve, milliseconds);
+            });
+        }
+
+        async function copyTextToClipboard(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+                return;
+            }
+
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.setAttribute("readonly", "readonly");
+            textarea.style.position = "absolute";
+            textarea.style.left = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textarea);
+        }
+
+        async function buildApiError(response, fallbackMessage) {
+            try {
+                const payload = await response.clone().json();
+                if (payload?.error?.message) {
+                    return new Error(payload.error.message);
+                }
+            } catch (error) {
+                // Fall back to the caller-provided message.
+            }
+
+            return new Error(fallbackMessage);
+        }
+
+        async function simulateSponsorTwilioStatus() {
+            const messageSid = selectedSponsorTwilioMessageSid();
+            const nextStatus = twilioSimStatus?.value || "delivered";
+
+            if (!messageSid) {
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = "Send a Twilio demo SMS before simulating a status callback.";
+                }
+                return;
+            }
+
+            if (simulateTwilioStatusButton) {
+                simulateTwilioStatusButton.disabled = true;
+            }
+            if (twilioDeliveryStatus) {
+                twilioDeliveryStatus.textContent = `Simulating Twilio ${nextStatus} for ${messageSid}...`;
+            }
+
+            try {
+                const response = await fetch("/api/v1/video/twilio_simulate_status", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        message_sid: messageSid,
+                        status: nextStatus,
+                    }),
+                });
+                if (!response.ok) {
+                    throw await buildApiError(response, "Could not simulate the Twilio status callback.");
+                }
+
+                await response.json();
+                await loadDashboardOverview();
+                await loadTwilioResourcePreview(messageSid, "simulated sponsor message");
+                summaryStatus.textContent = `Twilio sponsor message ${messageSid} moved to ${nextStatus}.`;
+                twilioDeliveryStatus.textContent = `Twilio sponsor message ${messageSid} moved to ${nextStatus}.`;
+            } catch (error) {
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = error.message;
+                }
+            } finally {
+                if (simulateTwilioStatusButton) {
+                    simulateTwilioStatusButton.disabled = false;
+                }
+            }
+        }
+
+        async function progressSponsorTwilioStatus() {
+            const messageSid = selectedSponsorTwilioMessageSid();
+            const lifecycle = ["sent", "delivered"];
+
+            if (!messageSid) {
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = "Send a Twilio demo SMS before running the lifecycle demo.";
+                }
+                return;
+            }
+
+            if (simulateTwilioStatusButton) {
+                simulateTwilioStatusButton.disabled = true;
+            }
+            if (progressTwilioStatusButton) {
+                progressTwilioStatusButton.disabled = true;
+            }
+            if (twilioDeliveryStatus) {
+                twilioDeliveryStatus.textContent = `Running Twilio lifecycle demo for ${messageSid}...`;
+            }
+
+            try {
+                for (const nextStatus of lifecycle) {
+                    const response = await fetch("/api/v1/video/twilio_simulate_status", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            message_sid: messageSid,
+                            status: nextStatus,
+                        }),
+                    });
+                    if (!response.ok) {
+                        throw await buildApiError(response, "Could not run the Twilio lifecycle demo.");
+                    }
+
+                    if (twilioSimStatus) {
+                        twilioSimStatus.value = nextStatus;
+                    }
+                    await response.json();
+                    await loadDashboardOverview();
+                    await loadTwilioResourcePreview(messageSid, `lifecycle step ${nextStatus}`);
+                    if (nextStatus !== lifecycle[lifecycle.length - 1]) {
+                        await waitForDemoStep();
+                    }
+                }
+
+                summaryStatus.textContent = `Twilio sponsor message ${messageSid} progressed from queued to delivered.`;
+                twilioDeliveryStatus.textContent = `Twilio sponsor message ${messageSid} progressed from queued to delivered.`;
+            } catch (error) {
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = error.message;
+                }
+            } finally {
+                if (simulateTwilioStatusButton) {
+                    simulateTwilioStatusButton.disabled = false;
+                }
+                if (progressTwilioStatusButton) {
+                    progressTwilioStatusButton.disabled = false;
+                }
+            }
+        }
+
+        async function retrySponsorTwilioDelivery() {
+            const delivery = selectedSponsorTwilioDelivery();
+            if (!delivery) {
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = "Send a Twilio demo SMS before retrying a failed delivery.";
+                }
+                return;
+            }
+
+            if (!["failed", "undelivered"].includes(delivery.status)) {
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = `Twilio message ${delivery.provider_message_id} is ${delivery.status}. Simulate a failed or undelivered status before retrying it.`;
+                }
+                return;
+            }
+
+            if (retryTwilioDeliveryButton) {
+                retryTwilioDeliveryButton.disabled = true;
+            }
+            if (twilioDeliveryStatus) {
+                twilioDeliveryStatus.textContent = `Retrying Twilio delivery ${delivery.provider_message_id} to ${delivery.destination}...`;
+            }
+
+            try {
+                const response = await fetch("/api/v1/video/retry_outreach", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        message_sid: delivery.provider_message_id,
+                    }),
+                });
+                if (!response.ok) {
+                    throw await buildApiError(response, "Could not retry the failed Twilio delivery.");
+                }
+
+                const payload = await response.json();
+                await loadDashboardOverview();
+                await loadTwilioResourcePreview(
+                    payload.retried_delivery.provider_message_id,
+                    `retried sponsor message for ${payload.retried_delivery.name}`,
+                );
+                summaryStatus.textContent = `Retried Twilio delivery for ${payload.retried_delivery.name}. New message ${payload.retried_delivery.provider_message_id} is queued.`;
+                twilioDeliveryStatus.textContent = `Retried Twilio delivery for ${payload.retried_delivery.name}. New message ${payload.retried_delivery.provider_message_id} is queued.`;
+            } catch (error) {
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = error.message;
+                }
+            } finally {
+                if (retryTwilioDeliveryButton) {
+                    retryTwilioDeliveryButton.disabled = false;
+                }
+            }
+        }
+
+        async function prepareSponsorTwilioFallback() {
+            const delivery = selectedSponsorTwilioDelivery();
+            if (!delivery) {
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = "Send a Twilio demo SMS before preparing a secure-link fallback.";
+                }
+                return;
+            }
+
+            if (!["failed", "undelivered"].includes(delivery.status)) {
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = `Twilio message ${delivery.provider_message_id} is ${delivery.status}. Simulate a failed or undelivered status before preparing the secure-link fallback.`;
+                }
+                return;
+            }
+
+            if (prepareTwilioFallbackButton) {
+                prepareTwilioFallbackButton.disabled = true;
+            }
+            if (twilioDeliveryStatus) {
+                twilioDeliveryStatus.textContent = `Preparing a secure-link fallback for ${delivery.name}...`;
+            }
+
+            try {
+                const response = await fetch("/api/v1/video/prepare_fallback_link", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        customer_id: delivery.customer_id,
+                        campaign_type: delivery.campaign_type,
+                        message_sid: delivery.provider_message_id,
+                        source: "care_ops_console_twilio_failover",
+                    }),
+                });
+                if (!response.ok) {
+                    throw await buildApiError(response, "Could not prepare the secure-link fallback.");
+                }
+
+                const payload = await response.json();
+                await copyTextToClipboard(payload.absolute_page_url);
+                await loadDashboardOverview();
+                summaryStatus.textContent = `Prepared a secure-link fallback for ${payload.name} and copied it to the clipboard.`;
+                twilioDeliveryStatus.textContent = `Secure-link fallback copied for ${payload.name}. Tuner logged the failover after ${payload.delivery_status || "the latest"} Twilio delivery.`;
+                showToast(`Secure-link fallback copied for ${payload.name}.`, "success");
+            } catch (error) {
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = error.message;
+                }
+                showToast(error.message, "error");
+            } finally {
+                if (prepareTwilioFallbackButton) {
+                    prepareTwilioFallbackButton.disabled = false;
+                }
+            }
+        }
+
+        function renderSponsorStack(payload) {
+            if (!renderStatusValue || !renderStatusDetail || !tunerStatusValue || !tunerStatusDetail || !twilioStatusValue || !twilioStatusDetail || !twilioDeliveryStatus || !twilioDeliveryList || !twilioFallbackStatus || !twilioFallbackList) {
+                return;
+            }
+
+            const sponsor = payload.sponsor_summary;
+            const renderReadyCopy = sponsor.render.ready ? "ready" : "review";
+            renderStatusValue.textContent = renderReadyCopy;
+            renderStatusDetail.textContent = `Health ${sponsor.render.healthcheck_path} · render.yaml ${sponsor.render.render_yaml_present ? "yes" : "no"} · Dockerfile ${sponsor.render.dockerfile_present ? "yes" : "no"}`;
+
+            tunerStatusValue.textContent = String(sponsor.tuner.total_events);
+            const tunerEvents = Object.entries(sponsor.tuner.event_counts)
+                .map(([eventType, count]) => `${prettyEventType(eventType)}: ${count}`)
+                .join(" · ");
+            const tunerSources = Object.entries(sponsor.tuner.source_counts)
+                .map(([source, count]) => `${source.replaceAll("_", " ")}: ${count}`)
+                .join(" · ");
+            const tunerReviewOutcomes = Object.entries(sponsor.tuner.review_outcome_counts)
+                .map(([outcome, count]) => `${prettyOutcome(outcome)}: ${count}`)
+                .join(" · ");
+            const tunerTwilioRecovery = [
+                `Retries ${sponsor.tuner.twilio_retry_events}`,
+                `Fallbacks ${sponsor.tuner.twilio_failover_events}`,
+            ].join(" · ");
+            tunerStatusDetail.textContent = tunerEvents
+                ? `${tunerEvents}${tunerSources ? ` · Sources ${tunerSources}` : ""}${tunerReviewOutcomes ? ` · Review outcomes ${tunerReviewOutcomes}` : ""} · ${tunerTwilioRecovery}`
+                : "No workflow events captured yet.";
+
+            twilioStatusValue.textContent = String(sponsor.twilio.total_deliveries);
+            twilioStatusDetail.textContent = sponsor.twilio.total_deliveries === 0
+                ? "No SMS outreach sent yet."
+                : `Latest ${sponsor.twilio.latest_status} to ${sponsor.twilio.latest_destination || "unknown"} · ${formatCampaignBreakdown(sponsor.twilio.campaign_counts)} · Fallbacks ${sponsor.twilio.total_fallback_handoffs}`;
+
+            twilioDeliveryList.replaceChildren();
+            twilioFallbackList.replaceChildren();
+            if (payload.recent_outreach_deliveries.length === 0) {
+                twilioDeliveryStatus.textContent = "No Twilio outreach sent yet. Use the highlighted case to queue a demo SMS.";
+                twilioFallbackStatus.textContent = "No secure-link fallbacks prepared yet.";
+                if (simulateTwilioStatusButton) {
+                    simulateTwilioStatusButton.disabled = true;
+                }
+                if (progressTwilioStatusButton) {
+                    progressTwilioStatusButton.disabled = true;
+                }
+                if (retryTwilioDeliveryButton) {
+                    retryTwilioDeliveryButton.disabled = true;
+                }
+                if (prepareTwilioFallbackButton) {
+                    prepareTwilioFallbackButton.disabled = true;
+                }
+                loadTwilioResourcePreview(null);
+                if (twilioMessageListStatus && twilioMessageListPreview) {
+                    twilioMessageListStatus.textContent = "No Twilio message list loaded yet.";
+                    twilioMessageListPreview.textContent = "No Twilio message list loaded yet.";
+                }
+                return;
+            }
+
+            if (simulateTwilioStatusButton) {
+                simulateTwilioStatusButton.disabled = false;
+            }
+            if (progressTwilioStatusButton) {
+                progressTwilioStatusButton.disabled = false;
+            }
+            if (retryTwilioDeliveryButton) {
+                retryTwilioDeliveryButton.disabled = !["failed", "undelivered"].includes(selectedSponsorTwilioDelivery()?.status || "");
+            }
+            if (prepareTwilioFallbackButton) {
+                prepareTwilioFallbackButton.disabled = !["failed", "undelivered"].includes(selectedSponsorTwilioDelivery()?.status || "");
+            }
+
+            payload.recent_outreach_deliveries.forEach((delivery) => {
+                const item = document.createElement("div");
+                const top = document.createElement("div");
+                const heading = document.createElement("strong");
+                const status = document.createElement("span");
+                const meta = document.createElement("div");
+                const viewButton = document.createElement("button");
+
+                item.className = "signal-item";
+                top.className = "signal-top";
+                heading.textContent = `${delivery.name} · ${prettyCampaignName(delivery.campaign_type)}`;
+                status.className = "event-pill";
+                status.textContent = `${delivery.provider} ${delivery.status}`;
+                meta.className = "muted";
+                meta.textContent = [
+                    new Date(delivery.created_at).toLocaleString(),
+                    delivery.destination,
+                    delivery.from_number ? `from ${delivery.from_number}` : null,
+                    delivery.messaging_service_sid ? `service ${delivery.messaging_service_sid}` : null,
+                    delivery.provider_message_id,
+                ].filter(Boolean).join(" · ");
+                viewButton.type = "button";
+                viewButton.className = "ghost";
+                viewButton.textContent = "View Twilio resource";
+                viewButton.addEventListener("click", () => {
+                    loadTwilioResourcePreview(
+                        delivery.provider_message_id,
+                        `${delivery.name} (${prettyCampaignName(delivery.campaign_type)})`,
+                    );
+                });
+
+                top.appendChild(heading);
+                top.appendChild(status);
+                item.appendChild(top);
+                item.appendChild(meta);
+                item.appendChild(document.createTextNode(delivery.message_body));
+                item.appendChild(viewButton);
+                twilioDeliveryList.appendChild(item);
+            });
+
+            if (payload.recent_fallback_handoffs.length === 0) {
+                twilioFallbackStatus.textContent = "No secure-link fallbacks have been prepared yet.";
+            } else {
+                payload.recent_fallback_handoffs.forEach((handoff) => {
+                    const item = document.createElement("div");
+                    const top = document.createElement("div");
+                    const heading = document.createElement("strong");
+                    const status = document.createElement("span");
+                    const meta = document.createElement("div");
+                    const link = document.createElement("a");
+
+                    item.className = "signal-item";
+                    top.className = "signal-top";
+                    heading.textContent = `${handoff.name} · ${prettyCampaignName(handoff.campaign_type)}`;
+                    status.className = "event-pill";
+                    status.textContent = `fallback ${handoff.delivery_status || "prepared"}`;
+                    meta.className = "muted";
+                    meta.textContent = [
+                        new Date(handoff.created_at).toLocaleString(),
+                        handoff.message_sid || "manual handoff",
+                        handoff.source.replaceAll("_", " "),
+                    ].filter(Boolean).join(" · ");
+                    link.href = handoff.absolute_page_url;
+                    link.className = "ghost-link";
+                    link.textContent = "Open secure page";
+
+                    top.appendChild(heading);
+                    top.appendChild(status);
+                    item.appendChild(top);
+                    item.appendChild(meta);
+                    item.appendChild(link);
+                    twilioFallbackList.appendChild(item);
+                });
+                twilioFallbackStatus.textContent = `Showing ${pluralize(payload.recent_fallback_handoffs.length, "secure-link fallback")} prepared after failed or undelivered Twilio outreach.`;
+            }
+
+            twilioDeliveryStatus.textContent = `Sponsor view updated. ${pluralize(payload.recent_outreach_deliveries.length, "recent SMS outreach")} visible, ${pluralize(sponsor.tuner.twilio_retry_events, "retry")} logged, and ${pluralize(sponsor.tuner.twilio_failover_events, "fallback")} captured in Tuner.`;
+            const latestDelivery = payload.recent_outreach_deliveries[0];
+            if (latestDelivery && latestDelivery.provider_message_id !== activeTwilioMessageSid) {
+                loadTwilioResourcePreview(
+                    latestDelivery.provider_message_id,
+                    `${latestDelivery.name} (${prettyCampaignName(latestDelivery.campaign_type)})`,
+                );
+            }
+            loadTwilioMessageListPreview();
+        }
+
+        function renderQueueSliceSummary(filteredItems, totalItems) {
+            if (!queueSliceSummary) {
+                return;
+            }
+
+            const filters = currentQueueFilters();
+            const campaignLabel = filters.campaign === "all"
+                ? "all campaigns"
+                : prettyCampaignName(filters.campaign);
+            const queryLabel = filters.query ? ` matching "${filters.query}"` : "";
+            const outcomeLabel = filters.outcome !== "all" ? prettyOutcome(filters.outcome) : "";
+
+            if (filters.outcome !== "all") {
+                if (filteredItems.length === 0) {
+                    queueSliceSummary.textContent = `No reviewed ${outcomeLabel} cases are currently visible in ${campaignLabel}${queryLabel}. Use the review snapshot or reset the queue filters to widen the view.`;
+                    return;
+                }
+
+                queueSliceSummary.textContent = `Showing ${pluralize(filteredItems.length, `${outcomeLabel} reviewed case`)} out of ${pluralize(totalItems, "queue item")} in ${campaignLabel}${queryLabel}. This slice shows how the care team is resolving acknowledged cases.`;
+                return;
+            }
+
+            if (filters.status === "all") {
+                if (filteredItems.length === 0) {
+                    queueSliceSummary.textContent = totalItems === 0
+                        ? "No customer journeys are in the queue yet."
+                        : `No queue items match the current campaign or search filters in ${campaignLabel}${queryLabel}.`;
+                    return;
+                }
+
+                if (filters.campaign === "all" && !filters.query) {
+                    queueSliceSummary.textContent = `Showing all ${pluralize(filteredItems.length, "queue item")} across every campaign.`;
+                    return;
+                }
+
+                queueSliceSummary.textContent = `Showing ${pluralize(filteredItems.length, "filtered queue item")} in ${campaignLabel}${queryLabel}.`;
+                return;
+            }
+
+            const guide = statusGuide(filters.status);
+            const sliceLabel = guide.risk_bucket ? `${guide.risk_bucket} risk ${guide.status_label}` : guide.status_label;
+
+            if (filteredItems.length === 0) {
+                queueSliceSummary.textContent = `No ${guide.status_label} cases are currently visible in ${campaignLabel}${queryLabel}. Suggested action when one appears: ${guide.action}`;
+                return;
+            }
+
+            queueSliceSummary.textContent = `Showing ${pluralize(filteredItems.length, `${sliceLabel} case`)} out of ${pluralize(totalItems, "queue item")} in ${campaignLabel}${queryLabel}. Suggested action: ${guide.action}`;
+        }
+
+        function renderPresenterNotes(filteredItems, totalItems) {
+            if (!presenterNoteBadge || !presenterNoteSummary || !presenterNoteLine || !presenterNoteClick || !presenterNoteWhy) {
+                return;
+            }
+
+            if (!latestOverview) {
+                presenterNoteBadge.textContent = "Loading cue";
+                presenterNoteSummary.textContent = "Reading the current demo state and queue filters...";
+                presenterNoteLine.textContent = "Loading the strongest next sentence for the current state.";
+                presenterNoteClick.textContent = "Waiting for the first state update.";
+                presenterNoteWhy.textContent = "This will explain the value of the current story beat.";
+                return;
+            }
+
+            const filters = currentQueueFilters();
+            const totalSignals = latestOverview.voice_summary.total_notes;
+            const highRiskCount = latestOverview.voice_summary.high_risk_count;
+            const campaignLabel = filters.campaign === "all"
+                ? "all campaigns"
+                : prettyCampaignName(filters.campaign);
+            const queryDetail = filters.query ? ` matching "${filters.query}"` : "";
+            const outcomeLabel = filters.outcome !== "all" ? prettyOutcome(filters.outcome) : "";
+            const leadItem = filteredItems[0];
+
+            if (totalSignals === 0) {
+                presenterNoteBadge.textContent = "Opening setup";
+                presenterNoteSummary.textContent = `${pluralize(latestOverview.demo_jobs.length, "seeded journey")} are ready, but the story has not moved into signal capture yet.`;
+                presenterNoteLine.textContent = "These seeded journeys show the three care settings before any patient response comes in.";
+                presenterNoteClick.textContent = "Press Launch pitch path to seed demo signals and jump straight into the strongest escalation view.";
+                presenterNoteWhy.textContent = "It moves the pitch from setup into triage in one click.";
+                return;
+            }
+
+            if (filters.outcome !== "all") {
+                if (filteredItems.length === 0) {
+                    presenterNoteBadge.textContent = `${outcomeLabel} outcomes`;
+                    presenterNoteSummary.textContent = `No reviewed ${outcomeLabel} cases are visible in ${campaignLabel}${queryDetail}.`;
+                    presenterNoteLine.textContent = "This drill-down is ready, but no currently active reviewed cases match that outcome slice.";
+                    presenterNoteClick.textContent = "Clear the outcome filter or seed more demo activity to repopulate this reviewed-case segment.";
+                    presenterNoteWhy.textContent = "It shows the dashboard can move from aggregate analytics straight into operational drill-down when those reviewed cases exist.";
+                    return;
+                }
+
+                presenterNoteBadge.textContent = `${outcomeLabel} outcomes`;
+                presenterNoteSummary.textContent = `You are looking at ${pluralize(filteredItems.length, `${outcomeLabel} reviewed case`)} in ${campaignLabel}${queryDetail}.`;
+
+                if (filters.outcome === "escalated") {
+                    presenterNoteLine.textContent = "These are the cases the care team formally escalated after review, which shows the biomarker signal turning into a documented clinical action.";
+                    presenterNoteClick.textContent = leadItem
+                        ? `Open ${leadItem.name}'s patient page to show the latest signal, the recorded review outcome, and the next outreach handoff.`
+                        : "Open a reviewed escalated case to show the full path from signal to documented action.";
+                    presenterNoteWhy.textContent = "It proves the platform does more than rank urgency. It captures accountable escalation decisions.";
+                    return;
+                }
+
+                if (filters.outcome === "routine_followup") {
+                    presenterNoteLine.textContent = "These reviewed cases stayed in managed follow-up instead of urgent escalation, which shows the care team can take proportionate action.";
+                    presenterNoteClick.textContent = "Point to the review note, then load the case back into custom setup to show a calmer follow-up plan.";
+                    presenterNoteWhy.textContent = "It demonstrates clinical nuance: not every reviewed case becomes an emergency, but each one becomes traceable.";
+                    return;
+                }
+
+                presenterNoteLine.textContent = "These reviewed cases were closed after review, which shows the team can document resolution without losing the original signal trail.";
+                presenterNoteClick.textContent = "Open a closed case or show the review metadata in the queue to explain how the loop is finished cleanly.";
+                presenterNoteWhy.textContent = "It closes the story from signal detection to a completed outcome the team can report on later.";
+                return;
+            }
+
+            if (filters.status === "priority_followup" && filteredItems.length > 0) {
+                presenterNoteBadge.textContent = "Escalation beat";
+                presenterNoteSummary.textContent = `You are looking at ${pluralize(filteredItems.length, "high-risk case")} in ${campaignLabel}${queryDetail}.`;
+                presenterNoteLine.textContent = "Here is the highest-risk case the system surfaced from the latest voice signal and transcript.";
+                presenterNoteClick.textContent = leadItem
+                    ? `Press Open strongest case to jump into ${leadItem.name}'s patient page, or load the case into custom setup for a same-context follow-up.`
+                    : "Open the highlighted patient page to continue the escalation story.";
+                presenterNoteWhy.textContent = "This is the strongest proof point: Signal Over Noise turns raw patient responses into a prioritized escalation path.";
+                return;
+            }
+
+            if (filters.status === "review_soon" && filteredItems.length > 0) {
+                presenterNoteBadge.textContent = "Review beat";
+                presenterNoteSummary.textContent = `You are looking at ${pluralize(filteredItems.length, "medium-risk case")} in ${campaignLabel}${queryDetail}.`;
+                presenterNoteLine.textContent = "Not every patient needs escalation, but the system still identifies who should be reviewed sooner.";
+                presenterNoteClick.textContent = "Point to the suggested action, then open the highlighted case to show how the follow-up plan changes without jumping to urgent escalation.";
+                presenterNoteWhy.textContent = "This shows the platform supports nuanced triage rather than binary red-flagging.";
+                return;
+            }
+
+            if (filters.status === "monitor" && filteredItems.length > 0) {
+                presenterNoteBadge.textContent = "Monitoring beat";
+                presenterNoteSummary.textContent = `You are looking at ${pluralize(filteredItems.length, "low-risk case")} in ${campaignLabel}${queryDetail}.`;
+                presenterNoteLine.textContent = "A stable response stays in routine monitoring, which helps the team focus attention where it matters most.";
+                presenterNoteClick.textContent = "Use the risk guide to jump back to review soon or priority follow-up after showing that the platform can avoid unnecessary escalation.";
+                presenterNoteWhy.textContent = "This proves the system is selective, not alarmist.";
+                return;
+            }
+
+            if (filters.status === "reviewed" && filteredItems.length > 0) {
+                presenterNoteBadge.textContent = "Review closure";
+                presenterNoteSummary.textContent = `You are looking at ${pluralize(filteredItems.length, "reviewed case")} in ${campaignLabel}${queryDetail}.`;
+                presenterNoteLine.textContent = "This slice shows that the care team can acknowledge a case once it has been assessed, without losing the underlying signal history.";
+                presenterNoteClick.textContent = "Open a reviewed patient page or point to the review note in the queue to show the loop from detection to acknowledgment.";
+                presenterNoteWhy.textContent = "It closes the story: Signal Over Noise not only surfaces risk, it records that the team acted on it.";
+                return;
+            }
+
+            if (highRiskCount > 0) {
+                presenterNoteBadge.textContent = "Story live";
+                presenterNoteSummary.textContent = `${pluralize(totalSignals, "signal")} are live, including ${pluralize(highRiskCount, "high-risk case")}.`;
+                presenterNoteLine.textContent = "The system has already detected an escalation-worthy signal and segmented the queue by follow-up urgency.";
+                presenterNoteClick.textContent = "Click the high-risk row in the guide or press Launch pitch path to focus the queue, then use Open strongest case to jump into the patient journey.";
+                presenterNoteWhy.textContent = "It shows the full care-ops picture before you zoom into a specific patient journey.";
+                return;
+            }
+
+            presenterNoteBadge.textContent = "Signals live";
+            presenterNoteSummary.textContent = `${pluralize(totalSignals, "signal")} are live across ${pluralize(totalItems, "queue item")} in ${campaignLabel}${queryDetail}.`;
+            presenterNoteLine.textContent = "Responses are coming in, and the platform is already organizing them into distinct follow-up tiers.";
+            presenterNoteClick.textContent = "Use the guide to jump into a specific slice, then use Open strongest case to show how the latest signal changes the next outreach.";
+            presenterNoteWhy.textContent = "This bridges the dashboard story into either patient-level detail or care-team action.";
+        }
+
+        function buildPresenterScript() {
+            const badge = presenterNoteBadge?.textContent?.trim() || "Demo cue";
+            const summary = presenterNoteSummary?.textContent?.trim() || "";
+            const sayNext = presenterNoteLine?.textContent?.trim() || "";
+            const clickNext = presenterNoteClick?.textContent?.trim() || "";
+            const whyItMatters = presenterNoteWhy?.textContent?.trim() || "";
+
+            return [
+                `Signal Over Noise demo cue: ${badge}`,
+                "",
+                `State: ${summary}`,
+                `Say next: ${sayNext}`,
+                `Click next: ${clickNext}`,
+                `Why it matters: ${whyItMatters}`,
+            ].join("\n");
+        }
+
+        function buildDemoBrief() {
+            const now = new Date();
+            const storyBadge = storyStateBadge?.textContent?.trim() || "Unknown state";
+            const storySummary = storyStateSummary?.textContent?.trim() || "Story state summary unavailable.";
+            const storyDetail = storyStateDetail?.textContent?.trim() || "Story detail unavailable.";
+            const queueSummary = queueSliceSummary?.textContent?.trim() || "Queue slice summary unavailable.";
+            const presenterScript = buildPresenterScript();
+            const leadItem = currentStrongestCase();
+            const filters = currentQueueFilters();
+            const sponsorSummary = latestOverview?.sponsor_summary || null;
+            const reviewSummary = latestOverview?.review_summary || null;
+            const campaignFilter = filters.campaign === "all" ? "all campaigns" : prettyCampaignName(filters.campaign);
+            const searchFilter = filters.query || "none";
+            const statusFilter = filters.status === "all" ? "all statuses" : prettyStatus(filters.status);
+            const outcomeFilter = filters.outcome === "all" ? "all review outcomes" : prettyOutcome(filters.outcome);
+            const videoSummary = latestOverview?.video_summary || {};
+            const voiceSummary = latestOverview?.voice_summary || {};
+            const voiceRiskCounts = voiceSummary.risk_counts || {};
+            const fallbackHandoffs = latestOverview?.recent_fallback_handoffs || [];
+            const overviewLines = [
+                `Seeded journeys: ${latestOverview?.demo_jobs?.length ?? 0}`,
+                `Video jobs: ${videoSummary.total_jobs ?? 0}`,
+                `Voice notes: ${voiceSummary.total_notes ?? 0}`,
+                `High-risk cases: ${voiceSummary.high_risk_count ?? 0}`,
+                `Medium-risk cases: ${voiceRiskCounts.medium ?? 0}`,
+                `Low-risk cases: ${voiceRiskCounts.low ?? 0}`,
+                `Reviews: ${reviewSummary?.total_reviews ?? 0}`,
+            ];
+            const sponsorLines = sponsorSummary
+                ? [
+                `Render ready: ${sponsorSummary.render.ready ? "yes" : "no"} (${sponsorSummary.render.healthcheck_path})`,
+                `Tuner events: ${sponsorSummary.tuner.total_events}`,
+                `Twilio deliveries: ${sponsorSummary.twilio.total_deliveries}`,
+                `Latest Twilio status: ${sponsorSummary.twilio.latest_status}`,
+                `Twilio retries: ${sponsorSummary.tuner.twilio_retry_events}`,
+                `Secure-link fallbacks: ${sponsorSummary.twilio.total_fallback_handoffs}`,
+                `Review outcomes: ${Object.entries(sponsorSummary.tuner.review_outcome_counts).map(([outcome, count]) => `${prettyOutcome(outcome)} ${count}`).join(" · ")}`,
+            ]
+                : ["Sponsor summary unavailable."];
+            const fallbackLines = fallbackHandoffs.length === 0
+                ? ["No secure-link fallbacks have been prepared in the current demo state."]
+                : fallbackHandoffs.map((handoff, index) => [
+                    `${index === 0 ? "Latest fallback" : `Fallback ${index}`}: ${new Date(handoff.created_at).toLocaleString()}`,
+                    handoff.name,
+                    prettyCampaignName(handoff.campaign_type),
+                    handoff.delivery_status ? `after ${handoff.delivery_status}` : "manual handoff",
+                    handoff.absolute_page_url,
+                ].join(" · "));
+
+            const strongestCaseLines = leadItem
+                ? [
+                    `Name: ${leadItem.name}`,
+                    `Customer ID: ${leadItem.customer_id}`,
+                    `Campaign: ${prettyCampaignName(leadItem.campaign_type)}`,
+                    `Queue status: ${prettyStatus(leadItem.status)}`,
+                    `Risk bucket: ${leadItem.risk_bucket || "awaiting response"}`,
+                    `Review state: ${leadItem.review_active ? reviewSummary(leadItem) : "not yet reviewed"}`,
+                    `Suggested action: ${spotlightActionCopy(leadItem)}`,
+                    `Latest transcript: ${leadItem.latest_transcript || "No transcript captured yet."}`,
+                    `Patient page: ${new URL(leadItem.page_url, window.location.origin).toString()}`,
+                ]
+                : [
+                    "No strongest case is currently visible in the active queue slice.",
+                ];
+
+            return [
+                "Signal Over Noise Demo Brief",
+                `Generated: ${now.toLocaleString()}`,
+                `Source: ${window.location.href}`,
+                "",
+                "Story State",
+                `- Badge: ${storyBadge}`,
+                `- Summary: ${storySummary}`,
+                `- Detail: ${storyDetail}`,
+                "",
+                "Dashboard Snapshot",
+                ...overviewLines.map((line) => `- ${line}`),
+                "",
+                "Sponsor Stack",
+                ...sponsorLines.map((line) => `- ${line}`),
+                "",
+                "Fallback Handoffs",
+                ...fallbackLines.map((line) => `- ${line}`),
+                "",
+                "Active Queue Slice",
+                `- Status filter: ${statusFilter}`,
+                `- Campaign filter: ${campaignFilter}`,
+                `- Review outcome filter: ${outcomeFilter}`,
+                `- Search filter: ${searchFilter}`,
+                `- Summary: ${queueSummary}`,
+                `- Reviewer draft: ${reviewerNameInput?.value?.trim() || "not set"}`,
+                `- Review outcome draft: ${prettyOutcome(reviewOutcomeInput?.value || "")}`,
+                `- Review note draft: ${reviewNoteInput?.value?.trim() || "not set"}`,
+                "",
+                "Presenter Notes",
+                presenterScript,
+                "",
+                "Strongest Case",
+                ...strongestCaseLines.map((line) => `- ${line}`),
+            ].join("\n");
+        }
+
+        async function copyDemoScript() {
+            const script = buildPresenterScript();
+
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(script);
+                } else {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = script;
+                    textArea.setAttribute("readonly", "");
+                    textArea.style.position = "absolute";
+                    textArea.style.left = "-9999px";
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(textArea);
+                }
+
+                summaryStatus.textContent = "Presenter script copied from the current live notes.";
+                showToast("Presenter script copied.", "success");
+            } catch (error) {
+                summaryStatus.textContent = "Could not copy the presenter script automatically.";
+                showToast("Could not copy the presenter script automatically.", "error");
+            }
+        }
+
+        function downloadDemoBrief() {
+            const brief = buildDemoBrief();
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            const blob = new Blob([brief], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = `signal-over-noise-demo-brief-${timestamp}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            summaryStatus.textContent = "Demo brief downloaded from the current live state.";
+            showToast("Demo brief downloaded.", "success");
+        }
+
+        function spotlightActionCopy(item) {
+            if (!item) {
+                return "No care-team recommendation available yet.";
+            }
+
+            return statusGuide(item.status).action;
+        }
+
+        function renderSpotlight(items, totalItems) {
+            const item = items[0];
+
+            if (!item) {
+                spotlightStatus.className = "status-pill status-awaiting_response";
+                spotlightStatus.textContent = totalItems === 0 ? "no_active_cases" : "filtered_out";
+                spotlightRisk.hidden = true;
+                spotlightName.textContent = totalItems === 0 ? "No review candidates yet" : "No queue item matches the current filters";
+                spotlightMeta.textContent = totalItems === 0
+                    ? "Create or seed demo activity to surface a candidate."
+                    : "Adjust the queue filters to spotlight a customer journey.";
+                spotlightAction.textContent = spotlightActionCopy(null);
+                spotlightTranscript.textContent = "No transcript captured yet.";
+                spotlightReviewButton.hidden = true;
+                spotlightReviewButton.disabled = false;
+                spotlightReviewButton.onclick = null;
+                spotlightLoadButton.hidden = true;
+                spotlightLoadButton.onclick = null;
+                spotlightLink.hidden = true;
+                spotlightLink.removeAttribute("href");
+                return;
+            }
+
+            spotlightStatus.className = `status-pill status-${item.status}`;
+            spotlightStatus.textContent = prettyStatus(item.status);
+            spotlightName.textContent = `${item.name} · ${prettyCampaignName(item.campaign_type)}`;
+            spotlightMeta.textContent = item.latest_created_at
+                ? `${new Date(item.latest_created_at).toLocaleString()} · ${item.customer_id}`
+                : `Awaiting first voice note · ${item.customer_id}`;
+            if (item.review_active) {
+                spotlightMeta.textContent = `${spotlightMeta.textContent} · ${reviewSummary(item)}`;
+            }
+            spotlightAction.textContent = spotlightActionCopy(item);
+            spotlightTranscript.textContent = item.latest_transcript || "No transcript captured yet.";
+            spotlightReviewButton.hidden = false;
+            spotlightReviewButton.disabled = item.status === "reviewed" || item.status === "awaiting_response";
+            spotlightReviewButton.textContent = item.status === "reviewed"
+                ? "Already reviewed"
+                : item.status === "awaiting_response"
+                    ? "Awaiting voice note"
+                    : "Mark reviewed";
+            spotlightReviewButton.onclick = () => {
+                markCaseReviewed(item, "clinical spotlight");
+            };
+            spotlightLoadButton.hidden = false;
+            spotlightLoadButton.onclick = () => {
+                loadQueueItemIntoForm(item, "clinical spotlight");
+            };
+            spotlightLink.hidden = false;
+            spotlightLink.href = item.page_url;
+
+            if (item.risk_bucket) {
+                spotlightRisk.hidden = false;
+                spotlightRisk.className = riskClass(item.risk_bucket);
+                spotlightRisk.textContent = `${item.risk_bucket} risk`;
+            } else {
+                spotlightRisk.hidden = true;
+            }
+        }
+
+        function renderCareQueue(items) {
+            const filteredItems = filteredQueueItems(items);
+            queueList.replaceChildren();
+            renderRiskActionGuide();
+            if (latestOverview?.review_summary) {
+                renderReviewOutcomeSnapshot(latestOverview.review_summary);
+            }
+            renderQueueSliceSummary(filteredItems, items.length);
+            renderStoryStateBanner();
+            renderPresenterNotes(filteredItems, items.length);
+            updateStrongestCaseAction();
+            renderSpotlight(filteredItems, items.length);
+
+            if (filteredItems.length === 0) {
+                queueStatus.textContent = items.length === 0
+                    ? "No customer journeys available yet."
+                    : "No queue items match the current filters.";
+                return;
+            }
+
+            filteredItems.forEach((item) => {
+                const queueItem = document.createElement("div");
+                const top = document.createElement("div");
+                const title = document.createElement("strong");
+                const actions = document.createElement("div");
+                const statusPill = document.createElement("span");
+                const riskPill = document.createElement("span");
+                const meta = document.createElement("div");
+                const transcript = document.createElement("div");
+                const footer = document.createElement("div");
+                const loadButton = document.createElement("button");
+                const reviewButton = document.createElement("button");
+                const openLink = document.createElement("a");
+
+                queueItem.className = "queue-item";
+                top.className = "queue-top";
+                actions.className = "queue-actions";
+                footer.className = "queue-footer";
+                statusPill.className = `status-pill status-${item.status}`;
+                statusPill.textContent = prettyStatus(item.status);
+                title.textContent = `${item.name} · ${prettyCampaignName(item.campaign_type)}`;
+                meta.className = "muted";
+                meta.textContent = item.latest_created_at
+                    ? `${new Date(item.latest_created_at).toLocaleString()} · ${item.customer_id}`
+                    : `Awaiting first voice note · ${item.customer_id}`;
+                if (item.review_active) {
+                    meta.textContent = `${meta.textContent} · ${reviewSummary(item)}`;
+                }
+                transcript.className = "muted";
+                transcript.textContent = item.latest_transcript || "No transcript captured yet.";
+                loadButton.type = "button";
+                loadButton.className = "ghost";
+                loadButton.textContent = "Load follow-up";
+                loadButton.addEventListener("click", () => {
+                    loadQueueItemIntoForm(item, "care queue");
+                });
+                reviewButton.type = "button";
+                reviewButton.className = "ghost";
+                reviewButton.textContent = item.status === "reviewed"
+                    ? "Reviewed"
+                    : item.status === "awaiting_response"
+                        ? "Awaiting voice note"
+                        : "Mark reviewed";
+                reviewButton.disabled = item.status === "reviewed" || item.status === "awaiting_response";
+                reviewButton.addEventListener("click", () => {
+                    markCaseReviewed(item, "care queue");
+                });
+                openLink.className = "queue-link";
+                openLink.href = item.page_url;
+                openLink.textContent = "Open patient page";
+
+                actions.appendChild(statusPill);
+                if (item.risk_bucket) {
+                    riskPill.className = riskClass(item.risk_bucket);
+                    riskPill.textContent = `${item.risk_bucket} risk`;
+                    actions.appendChild(riskPill);
+                }
+
+                top.appendChild(title);
+                top.appendChild(actions);
+                queueItem.appendChild(top);
+                queueItem.appendChild(meta);
+                queueItem.appendChild(transcript);
+                footer.appendChild(loadButton);
+                footer.appendChild(reviewButton);
+                footer.appendChild(openLink);
+                queueItem.appendChild(footer);
+                queueList.appendChild(queueItem);
+            });
+
+            queueStatus.textContent = `Showing ${filteredItems.length} of ${items.length} queue items.`;
+        }
+
+        function openStrongestCase() {
+            const leadItem = currentStrongestCase();
+
+            if (!leadItem) {
+                summaryStatus.textContent = "No highlighted case is available in the current queue slice.";
+                updateStrongestCaseAction();
+                return;
+            }
+
+            summaryStatus.textContent = `Opening ${leadItem.name}'s patient page from the current queue slice.`;
+            window.location.href = leadItem.page_url;
+        }
+
+        async function sendStrongestCaseSms() {
+            const leadItem = currentStrongestCase();
+            const phoneNumber = twilioPhoneNumber?.value?.trim() || "";
+
+            if (!leadItem) {
+                twilioDeliveryStatus.textContent = "No highlighted case is available for Twilio outreach.";
+                updateStrongestCaseAction();
+                return;
+            }
+
+            if (!phoneNumber) {
+                twilioDeliveryStatus.textContent = "Enter a phone number before sending a Twilio demo SMS.";
+                return;
+            }
+
+            sendStrongestCaseSmsButton.disabled = true;
+            twilioDeliveryStatus.textContent = `Queueing a Twilio demo SMS for ${leadItem.name}...`;
+
+            try {
+                const response = await fetch("/api/v1/video/send_outreach", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        customer_id: leadItem.customer_id,
+                        campaign_type: leadItem.campaign_type,
+                        phone_number: phoneNumber,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw await buildApiError(response, "Could not send the Twilio demo SMS.");
+                }
+
+                const payload = await response.json();
+                await loadDashboardOverview();
+                twilioDeliveryStatus.textContent = `Twilio demo SMS queued to ${payload.delivery.destination} for ${leadItem.name}.`;
+                summaryStatus.textContent = `Twilio sponsor flow queued an SMS for ${leadItem.name}.`;
+                showToast(`Twilio demo SMS queued for ${leadItem.name}.`, "success");
+            } catch (error) {
+                twilioDeliveryStatus.textContent = error.message;
+                showToast(error.message, "error");
+            } finally {
+                updateStrongestCaseAction();
+            }
+        }
+
+        function setAutoRefresh(enabled) {
+            if (autoRefreshTimer) {
+                window.clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
+            }
+
+            if (enabled) {
+                autoRefreshTimer = window.setInterval(() => {
+                    loadDashboardOverview();
+                }, 15000);
+                summaryStatus.textContent = "Live refresh enabled. Dashboard updates every 15 seconds.";
+            }
+        }
+
+        async function loadQuickDemoJobs() {
+            quickDemoStatus.textContent = "Loading seeded demo scenarios...";
+
+            try {
+                const response = await fetch("/api/v1/video/demo_jobs");
+                if (!response.ok) {
+                    throw new Error("Could not load demo jobs.");
+                }
+
+                const payload = await response.json();
+                quickDemoList.replaceChildren();
+
+                payload.forEach((job) => {
+                    const wrapper = document.createElement("div");
+                    const copy = document.createElement("div");
+                    const name = document.createElement("strong");
+                    const meta = document.createElement("span");
+                    const button = document.createElement("button");
+
+                    wrapper.className = "demo-row";
+                    copy.className = "demo-copy";
+                    name.textContent = job.name;
+                    meta.className = "muted";
+                    meta.textContent = `${prettyCampaignName(job.campaign_type)} demo journey`;
+                    button.type = "button";
+                    button.className = "ghost";
+                    button.textContent = "Open journey";
+                    button.addEventListener("click", () => {
+                        window.location.href = job.page_url || videoPageUrl(job.customer_id, job.campaign_type);
+                    });
+
+                    copy.appendChild(name);
+                    copy.appendChild(meta);
+                    wrapper.appendChild(copy);
+                    wrapper.appendChild(button);
+                    quickDemoList.appendChild(wrapper);
+                });
+
+                quickDemoStatus.textContent = "Seeded demo scenarios ready.";
+            } catch (error) {
+                quickDemoStatus.textContent = error.message;
+            }
+        }
+
+        async function loadDashboardSummary() {
+            summaryStatus.textContent = "Refreshing dashboard snapshot...";
+
+            try {
+                const [videoResponse, voiceResponse] = await Promise.all([
+                    fetch("/api/v1/video/summary"),
+                    fetch("/api/v1/voice_note/summary"),
+                ]);
+
+                if (!videoResponse.ok || !voiceResponse.ok) {
+                    throw new Error("Could not load dashboard summary.");
+                }
+
+                const videoSummary = await videoResponse.json();
+                const voiceSummary = await voiceResponse.json();
+
+                metricVideoJobs.textContent = String(videoSummary.total_jobs);
+                metricVideoDetail.textContent = formatCampaignBreakdown(videoSummary.campaign_counts);
+
+                metricVoiceNotes.textContent = String(voiceSummary.total_notes);
+                metricNoteDetail.textContent = formatCampaignBreakdown(voiceSummary.campaign_counts);
+
+                metricHighRisk.textContent = String(voiceSummary.high_risk_count);
+                metricRiskDetail.textContent = `Low ${voiceSummary.risk_counts.low} · Medium ${voiceSummary.risk_counts.medium} · High ${voiceSummary.risk_counts.high}`;
+
+                if (voiceSummary.latest_created_at) {
+                    metricLatestUpdate.textContent = new Date(voiceSummary.latest_created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    });
+                    metricLatestDetail.textContent = new Date(voiceSummary.latest_created_at).toLocaleString();
+                } else {
+                    metricLatestUpdate.textContent = "-";
+                    metricLatestDetail.textContent = "Awaiting the first signal.";
+                }
+
+                summaryStatus.textContent = "Dashboard snapshot updated.";
+            } catch (error) {
+                summaryStatus.textContent = error.message;
+            }
+        }
+
+        async function loadRecentSignalFeed() {
+            signalFeedStatus.textContent = "Loading recent voice notes...";
+
+            try {
+                const response = await fetch("/api/v1/voice_note/recent?limit=6");
+                if (!response.ok) {
+                    throw new Error("Could not load recent signal feed.");
+                }
+
+                const payload = await response.json();
+                signalFeedList.replaceChildren();
+
+                if (payload.length === 0) {
+                    signalFeedStatus.textContent = "No voice notes submitted yet.";
+                    return;
+                }
+
+                payload.forEach((note) => {
+                    const item = document.createElement("div");
+                    const top = document.createElement("div");
+                    const heading = document.createElement("strong");
+                    const risk = document.createElement("span");
+                    const meta = document.createElement("div");
+
+                    item.className = "signal-item";
+                    top.className = "signal-top";
+                    heading.textContent = `${note.customer_id} · ${prettyCampaignName(note.campaign_type)}`;
+                    risk.className = riskClass(note.risk_bucket);
+                    risk.textContent = `${note.risk_bucket} risk`;
+                    meta.className = "muted";
+                    meta.textContent = `${new Date(note.created_at).toLocaleString()} · ${note.voice_note_id}`;
+
+                    top.appendChild(heading);
+                    top.appendChild(risk);
+                    item.appendChild(top);
+                    item.appendChild(meta);
+                    item.appendChild(document.createTextNode(note.transcript));
+                    signalFeedList.appendChild(item);
+                });
+
+                signalFeedStatus.textContent = "Recent signal feed updated.";
+            } catch (error) {
+                signalFeedStatus.textContent = error.message;
+            }
+        }
+
+        async function loadCareQueue() {
+            queueStatus.textContent = "Loading care review queue...";
+
+            try {
+                const response = await fetch("/api/v1/video/care_queue?limit=8");
+                if (!response.ok) {
+                    throw new Error("Could not load care queue.");
+                }
+
+                const payload = await response.json();
+                renderCareQueue(payload);
+            } catch (error) {
+                queueStatus.textContent = error.message;
+            }
+        }
+
+        async function loadObservabilityFeed() {
+            eventsStatus.textContent = "Loading workflow events...";
+
+            try {
+                const response = await fetch("/api/v1/video/observability?limit=8");
+                if (!response.ok) {
+                    throw new Error("Could not load observability feed.");
+                }
+
+                const payload = await response.json();
+                eventsList.replaceChildren();
+
+                if (payload.recent_events.length === 0) {
+                    eventsStatus.textContent = "No workflow events captured yet.";
+                    return;
+                }
+
+                payload.recent_events.forEach((event) => {
+                    const item = document.createElement("div");
+                    const top = document.createElement("div");
+                    const title = document.createElement("strong");
+                    const typePill = document.createElement("span");
+                    const meta = document.createElement("div");
+                    const detail = document.createElement("div");
+                    const timestamp = new Date(event.timestamp).toLocaleString();
+                    const source = event.source ? ` · ${event.source}` : "";
+                    const risk = event.risk_bucket ? ` · risk=${event.risk_bucket}` : "";
+
+                    item.className = "event-item";
+                    top.className = "event-top";
+                    title.textContent = `${event.customer_id} · ${prettyCampaignName(event.campaign_type)}`;
+                    typePill.className = "event-pill";
+                    typePill.textContent = prettyEventType(event.event_type);
+                    meta.className = "muted";
+                    meta.textContent = `${timestamp}${source}${risk}`;
+                    detail.className = "muted";
+                    detail.textContent = JSON.stringify(event.extra || {});
+
+                    top.appendChild(title);
+                    top.appendChild(typePill);
+                    item.appendChild(top);
+                    item.appendChild(meta);
+                    item.appendChild(detail);
+                    eventsList.appendChild(item);
+                });
+
+                const eventCounts = Object.entries(payload.event_counts)
+                    .map(([eventType, count]) => `${prettyEventType(eventType)}: ${count}`)
+                    .join(" · ");
+                eventsStatus.textContent = `Workflow events updated. ${eventCounts || "No event counts available."}`;
+            } catch (error) {
+                eventsStatus.textContent = error.message;
+            }
+        }
+
+        async function loadDashboardOverview() {
+            summaryStatus.textContent = "Refreshing dashboard overview...";
+            quickDemoStatus.textContent = "Loading seeded demo scenarios...";
+            signalFeedStatus.textContent = "Loading recent voice notes...";
+            queueStatus.textContent = "Loading care review queue...";
+            eventsStatus.textContent = "Loading workflow events...";
+            if (twilioDeliveryStatus) {
+                twilioDeliveryStatus.textContent = "Loading sponsor stack...";
+            }
+
+            try {
+                const response = await fetch("/api/v1/video/dashboard_overview");
+                if (!response.ok) {
+                    throw new Error("Could not load dashboard overview.");
+                }
+
+                const payload = await response.json();
+                latestOverview = payload;
+
+                quickDemoList.replaceChildren();
+                payload.demo_jobs.forEach((job) => {
+                    const wrapper = document.createElement("div");
+                    const copy = document.createElement("div");
+                    const name = document.createElement("strong");
+                    const meta = document.createElement("span");
+                    const button = document.createElement("button");
+
+                    wrapper.className = "demo-row";
+                    copy.className = "demo-copy";
+                    name.textContent = job.name;
+                    meta.className = "muted";
+                    meta.textContent = `${prettyCampaignName(job.campaign_type)} demo journey`;
+                    button.type = "button";
+                    button.className = "ghost";
+                    button.textContent = "Open journey";
+                    button.addEventListener("click", () => {
+                        window.location.href = job.page_url || videoPageUrl(job.customer_id, job.campaign_type);
+                    });
+
+                    copy.appendChild(name);
+                    copy.appendChild(meta);
+                    wrapper.appendChild(copy);
+                    wrapper.appendChild(button);
+                    quickDemoList.appendChild(wrapper);
+                });
+                quickDemoStatus.textContent = "Seeded demo scenarios ready.";
+
+                metricVideoJobs.textContent = String(payload.video_summary.total_jobs);
+                metricVideoDetail.textContent = formatCampaignBreakdown(payload.video_summary.campaign_counts);
+                metricVoiceNotes.textContent = String(payload.voice_summary.total_notes);
+                metricNoteDetail.textContent = formatCampaignBreakdown(payload.voice_summary.campaign_counts);
+                metricHighRisk.textContent = String(payload.voice_summary.high_risk_count);
+                metricRiskDetail.textContent = `Low ${payload.voice_summary.risk_counts.low} · Medium ${payload.voice_summary.risk_counts.medium} · High ${payload.voice_summary.risk_counts.high}`;
+
+                if (payload.voice_summary.latest_created_at) {
+                    metricLatestUpdate.textContent = new Date(payload.voice_summary.latest_created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    });
+                    metricLatestDetail.textContent = new Date(payload.voice_summary.latest_created_at).toLocaleString();
+                } else {
+                    metricLatestUpdate.textContent = "-";
+                    metricLatestDetail.textContent = "Awaiting the first signal.";
+                }
+                const reviewCounts = Object.entries(payload.review_summary.outcome_counts)
+                    .map(([outcome, count]) => `${prettyOutcome(outcome)} ${count}`)
+                    .join(" · ");
+                summaryStatus.textContent = `Dashboard overview updated. Reviews ${payload.review_summary.total_reviews}${reviewCounts ? ` · ${reviewCounts}` : ""}`;
+                renderReviewOutcomeSnapshot(payload.review_summary);
+                renderSponsorStack(payload);
+
+                signalFeedList.replaceChildren();
+                if (payload.recent_voice_notes.length === 0) {
+                    signalFeedStatus.textContent = "No voice notes submitted yet.";
+                } else {
+                    payload.recent_voice_notes.forEach((note) => {
+                        const item = document.createElement("div");
+                        const top = document.createElement("div");
+                        const heading = document.createElement("strong");
+                        const risk = document.createElement("span");
+                        const meta = document.createElement("div");
+
+                        item.className = "signal-item";
+                        top.className = "signal-top";
+                        heading.textContent = `${note.customer_id} · ${prettyCampaignName(note.campaign_type)}`;
+                        risk.className = riskClass(note.risk_bucket);
+                        risk.textContent = `${note.risk_bucket} risk`;
+                        meta.className = "muted";
+                        meta.textContent = `${new Date(note.created_at).toLocaleString()} · ${note.voice_note_id}`;
+
+                        top.appendChild(heading);
+                        top.appendChild(risk);
+                        item.appendChild(top);
+                        item.appendChild(meta);
+                        item.appendChild(document.createTextNode(note.transcript));
+                        signalFeedList.appendChild(item);
+                    });
+                    signalFeedStatus.textContent = "Recent signal feed updated.";
+                }
+
+                renderCareQueue(payload.care_queue);
+
+                eventsList.replaceChildren();
+                if (payload.observability.recent_events.length === 0) {
+                    eventsStatus.textContent = "No workflow events captured yet.";
+                } else {
+                    payload.observability.recent_events.forEach((event) => {
+                        const item = document.createElement("div");
+                        const top = document.createElement("div");
+                        const title = document.createElement("strong");
+                        const typePill = document.createElement("span");
+                        const meta = document.createElement("div");
+                        const detail = document.createElement("div");
+                        const timestamp = new Date(event.timestamp).toLocaleString();
+                        const source = event.source ? ` · ${event.source}` : "";
+                        const risk = event.risk_bucket ? ` · risk=${event.risk_bucket}` : "";
+
+                        item.className = "event-item";
+                        top.className = "event-top";
+                        title.textContent = `${event.customer_id} · ${prettyCampaignName(event.campaign_type)}`;
+                        typePill.className = "event-pill";
+                        typePill.textContent = prettyEventType(event.event_type);
+                        meta.className = "muted";
+                        meta.textContent = `${timestamp}${source}${risk}`;
+                        detail.className = "muted";
+                        detail.textContent = JSON.stringify(event.extra || {});
+
+                        top.appendChild(title);
+                        top.appendChild(typePill);
+                        item.appendChild(top);
+                        item.appendChild(meta);
+                        item.appendChild(detail);
+                        eventsList.appendChild(item);
+                    });
+
+                    const eventCounts = Object.entries(payload.observability.event_counts)
+                        .map(([eventType, count]) => `${prettyEventType(eventType)}: ${count}`)
+                        .join(" · ");
+                    eventsStatus.textContent = `Workflow events updated. ${eventCounts || "No event counts available."}`;
+                }
+            } catch (error) {
+                summaryStatus.textContent = error.message;
+                quickDemoStatus.textContent = error.message;
+                signalFeedStatus.textContent = error.message;
+                queueStatus.textContent = error.message;
+                eventsStatus.textContent = error.message;
+                if (twilioDeliveryStatus) {
+                    twilioDeliveryStatus.textContent = error.message;
+                }
+            }
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const demoVisualsEnabled = Boolean(useDemoVisuals?.checked);
+            uploadStatus.textContent = demoVisualsEnabled
+                ? "Creating a personalized video job with demo visuals..."
+                : "Uploading images and creating a video job...";
+            uploadResult.textContent = "";
+            createResult.textContent = "";
+            launchContainer.textContent = "";
+            generateButton.disabled = true;
+
+            try {
+                let mediaPayload = {
+                    avatar_url: null,
+                    background_url: null,
+                };
+
+                if (demoVisualsEnabled) {
+                    uploadResult.textContent = JSON.stringify(
+                        {
+                            campaign_type: form.elements.campaign_type.value,
+                            avatar_url: null,
+                            background_url: null,
+                            mode: "demo_visuals",
+                        },
+                        null,
+                        2
+                    );
+                } else {
+                    const mediaResponse = await fetch("/api/v1/media/upload", {
+                        method: "POST",
+                        body: new FormData(form),
+                    });
+
+                    if (!mediaResponse.ok) {
+                        throw await buildApiError(mediaResponse, "Media upload failed.");
+                    }
+
+                    mediaPayload = await mediaResponse.json();
+                    uploadResult.textContent = JSON.stringify(mediaPayload, null, 2);
+                }
+
+                const daysToExpiryValue = form.elements.days_to_expiry.value;
+                const videoPayload = {
+                    customer_id: form.elements.customer_id.value,
+                    name: form.elements.name.value,
+                    plan: form.elements.plan.value || null,
+                    days_to_expiry: daysToExpiryValue ? Number(daysToExpiryValue) : null,
+                    campaign_type: form.elements.campaign_type.value,
+                    avatar_image_url: mediaPayload.avatar_url,
+                    background_image_url: mediaPayload.background_url,
+                };
+
+                const createResponse = await fetch("/api/v1/video/create_job", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(videoPayload),
+                });
+
+                if (!createResponse.ok) {
+                    throw await buildApiError(createResponse, "Video generation failed.");
+                }
+
+                const createPayload = await createResponse.json();
+                createResult.textContent = JSON.stringify(createPayload, null, 2);
+                uploadStatus.textContent = "Video job created successfully.";
+
+                const launchLink = document.createElement("a");
+                launchLink.className = "launch-link primary";
+                launchLink.href = videoPageUrl(createPayload.customer_id, createPayload.campaign_type);
+                launchLink.textContent = "Open the customer video page";
+                launchContainer.replaceChildren(launchLink);
+                await loadDashboardOverview();
+                showToast("Video job created successfully.", "success");
+            } catch (error) {
+                uploadStatus.textContent = error.message;
+                showToast(error.message, "error");
+            } finally {
+                generateButton.disabled = false;
+            }
+        });
+
+        async function seedDemoSignals() {
+            summaryStatus.textContent = "Creating seeded demo signals...";
+            seedSignalsButton.disabled = true;
+
+            try {
+                const response = await fetch("/api/v1/voice_note/seed_demo", {
+                    method: "POST",
+                });
+
+                if (!response.ok) {
+                    throw await buildApiError(response, "Could not seed demo signals.");
+                }
+
+                await response.json();
+                summaryStatus.textContent = "Demo signals populated.";
+                await loadDashboardOverview();
+                showToast("Demo signals populated.", "success");
+            } catch (error) {
+                summaryStatus.textContent = error.message;
+                showToast(error.message, "error");
+            } finally {
+                seedSignalsButton.disabled = false;
+            }
+        }
+
+        async function preparePitchPath({ resetFirst = false } = {}) {
+            summaryStatus.textContent = resetFirst
+                ? "Resetting the demo and preparing the strongest pitch path..."
+                : "Preparing the strongest demo path...";
+            if (launchPitchPathButton) {
+                launchPitchPathButton.disabled = true;
+            }
+            if (resetLaunchPitchPathButton) {
+                resetLaunchPitchPathButton.disabled = true;
+            }
+            seedSignalsButton.disabled = true;
+            resetDemoButton.disabled = true;
+
+            try {
+                if (resetFirst) {
+                    const resetResponse = await fetch("/api/v1/video/reset_demo", {
+                        method: "POST",
+                    });
+
+                    if (!resetResponse.ok) {
+                        throw await buildApiError(resetResponse, "Could not reset the demo before launching the pitch path.");
+                    }
+
+                    await resetResponse.json();
+                    uploadResult.textContent = "";
+                    createResult.textContent = "";
+                    launchContainer.textContent = "";
+                }
+
+                const response = await fetch("/api/v1/voice_note/seed_demo", {
+                    method: "POST",
+                });
+
+                if (!response.ok) {
+                    throw await buildApiError(response, "Could not prepare the pitch path.");
+                }
+
+                await response.json();
+                await loadDashboardOverview();
+                focusQueueStatus("priority_followup");
+                summaryStatus.textContent = resetFirst
+                    ? "Demo reset and pitch path ready. The queue is focused on the high-risk priority-followup slice."
+                    : "Pitch path ready. The queue is focused on the high-risk priority-followup slice.";
+                showToast(resetFirst ? "Reset complete. Pitch path ready." : "Pitch path ready.", "success");
+            } catch (error) {
+                summaryStatus.textContent = error.message;
+                showToast(error.message, "error");
+            } finally {
+                if (launchPitchPathButton) {
+                    launchPitchPathButton.disabled = false;
+                }
+                if (resetLaunchPitchPathButton) {
+                    resetLaunchPitchPathButton.disabled = false;
+                }
+                seedSignalsButton.disabled = false;
+                resetDemoButton.disabled = false;
+            }
+        }
+
+        async function launchPitchPath() {
+            await preparePitchPath();
+        }
+
+        async function resetAndLaunchPitchPath() {
+            await preparePitchPath({ resetFirst: true });
+        }
+
+        async function resetDemoState() {
+            summaryStatus.textContent = "Resetting demo state...";
+            resetDemoButton.disabled = true;
+
+            try {
+                const response = await fetch("/api/v1/video/reset_demo", {
+                    method: "POST",
+                });
+
+                if (!response.ok) {
+                    throw await buildApiError(response, "Could not reset demo state.");
+                }
+
+                const payload = await response.json();
+                uploadResult.textContent = "";
+                createResult.textContent = "";
+                launchContainer.textContent = "";
+                summaryStatus.textContent = payload.message;
+                await loadDashboardOverview();
+                showToast("Demo state reset.", "success");
+            } catch (error) {
+                summaryStatus.textContent = error.message;
+                showToast(error.message, "error");
+            } finally {
+                resetDemoButton.disabled = false;
+            }
+        }
+
+        refreshFeedButton.addEventListener("click", loadRecentSignalFeed);
+        refreshQueueButton.addEventListener("click", loadCareQueue);
+        refreshDashboardButton.addEventListener("click", loadDashboardOverview);
+        refreshSponsorButton?.addEventListener("click", loadDashboardOverview);
+        simulateTwilioStatusButton?.addEventListener("click", simulateSponsorTwilioStatus);
+        progressTwilioStatusButton?.addEventListener("click", progressSponsorTwilioStatus);
+        retryTwilioDeliveryButton?.addEventListener("click", retrySponsorTwilioDelivery);
+        prepareTwilioFallbackButton?.addEventListener("click", prepareSponsorTwilioFallback);
+        launchPitchPathButton?.addEventListener("click", launchPitchPath);
+        resetLaunchPitchPathButton?.addEventListener("click", resetAndLaunchPitchPath);
+        openStrongestCaseButton?.addEventListener("click", openStrongestCase);
+        sendStrongestCaseSmsButton?.addEventListener("click", sendStrongestCaseSms);
+        copyDemoScriptButton?.addEventListener("click", copyDemoScript);
+        downloadDemoBriefButton?.addEventListener("click", downloadDemoBrief);
+        seedSignalsButton.addEventListener("click", seedDemoSignals);
+        resetDemoButton.addEventListener("click", resetDemoState);
+        refreshEventsButton.addEventListener("click", loadObservabilityFeed);
+        useDemoVisuals.addEventListener("change", () => {
+            syncVisualMode();
+            scheduleScriptPreview();
+        });
+        applyPresetButton.addEventListener("click", () => {
+            applyCampaignPreset({ force: true });
+        });
+        renderRiskActionGuide();
+        renderStoryStateBanner();
+        loadReviewDraftPreferences();
+        syncVisualMode();
+        presetFieldNames.forEach((fieldName) => {
+            form.elements[fieldName].addEventListener("input", markPresetFieldEdited);
+            form.elements[fieldName].addEventListener("change", markPresetFieldEdited);
+        });
+        ["name", "plan", "days_to_expiry"].forEach((fieldName) => {
+            form.elements[fieldName].addEventListener("input", scheduleScriptPreview);
+            form.elements[fieldName].addEventListener("change", scheduleScriptPreview);
+        });
+        form.elements.campaign_type.addEventListener("change", () => {
+            applyCampaignPreset();
+        });
+        queueSearch.addEventListener("input", () => {
+            if (latestOverview) {
+                renderCareQueue(latestOverview.care_queue);
+            }
+        });
+        queueStatusFilter.addEventListener("change", () => {
+            if (queueStatusFilter.value !== "reviewed" && queueReviewOutcomeFilter) {
+                queueReviewOutcomeFilter.value = "all";
+            }
+            if (latestOverview) {
+                renderCareQueue(latestOverview.care_queue);
+            }
+        });
+        queueCampaignFilter.addEventListener("change", () => {
+            if (latestOverview) {
+                renderCareQueue(latestOverview.care_queue);
+            }
+        });
+        queueReviewOutcomeFilter?.addEventListener("change", () => {
+            if (queueReviewOutcomeFilter.value !== "all" && queueStatusFilter) {
+                queueStatusFilter.value = "reviewed";
+            }
+            if (latestOverview) {
+                renderCareQueue(latestOverview.care_queue);
+            }
+        });
+        reviewerNameInput?.addEventListener("input", () => {
+            writeStoredReviewerName(reviewerNameInput.value.trim());
+        });
+        reviewOutcomeInput?.addEventListener("change", () => {
+            writeStoredReviewOutcome(reviewOutcomeInput.value);
+        });
+        autoRefreshToggle.addEventListener("change", (event) => {
+            setAutoRefresh(event.target.checked);
+        });
+        if (!applyDraftFromUrl()) {
+            applyCampaignPreset({ force: true });
+        }
+        wireStatusLiveRegions();
+        loadDashboardOverview();
+    </script>
+</body>
+</html>

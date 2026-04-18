@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Over Noise</title>
+    <style>
+        :root {
+            --page-bg: #f4efe6;
+            --paper: rgba(255, 252, 246, 0.9);
+            --panel: rgba(255, 248, 237, 0.8);
+            --ink: #1e2d2f;
+            --muted: #5c6767;
+            --line: rgba(30, 45, 47, 0.12);
+            --accent: #11736b;
+            --accent-soft: rgba(17, 115, 107, 0.12);
+            --warn: #ba6d19;
+            --warn-soft: rgba(186, 109, 25, 0.14);
+            --danger: #a03f4d;
+            --danger-soft: rgba(160, 63, 77, 0.16);
+            --shadow: 0 24px 60px rgba(30, 45, 47, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Avenir Next", "Segoe UI", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(17, 115, 107, 0.18), transparent 28rem),
+                radial-gradient(circle at top right, rgba(186, 109, 25, 0.18), transparent 24rem),
+                linear-gradient(180deg, #fbf8f1 0%, var(--page-bg) 55%, #ede4d6 100%);
+        }
+
+        .shell {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 40px 20px 56px;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.64);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            font-size: 0.74rem;
+            color: var(--muted);
+            backdrop-filter: blur(14px);
+        }
+
+        .hero {
+            margin-top: 18px;
+            display: grid;
+            gap: 18px;
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+            font-weight: 600;
+            line-height: 0.98;
+        }
+
+        h1 {
+            max-width: 10ch;
+            font-size: clamp(2.8rem, 8vw, 5.2rem);
+            letter-spacing: -0.05em;
+        }
+
+        .lede {
+            max-width: 58rem;
+            margin: 0;
+            font-size: 1.08rem;
+            line-height: 1.7;
+            color: var(--muted);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.95fr);
+            gap: 22px;
+            margin-top: 28px;
+        }
+
+        .card {
+            background: var(--paper);
+            border: 1px solid rgba(255, 255, 255, 0.58);
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+            animation: fade-up 0.6s ease both;
+        }
+
+        .video-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.68);
+            font-size: 0.84rem;
+            color: var(--muted);
+        }
+
+        video {
+            width: 100%;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #ece1cf, #d5e5df);
+            border: 1px solid rgba(30, 45, 47, 0.12);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 14px 20px;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .primary {
+            color: white;
+            background: linear-gradient(135deg, #11736b, #1b9186);
+            box-shadow: 0 14px 30px rgba(17, 115, 107, 0.22);
+        }
+
+        .secondary {
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(30, 45, 47, 0.12);
+        }
+
+        .status {
+            min-height: 1.5rem;
+            margin: 16px 0 0;
+            color: var(--muted);
+            font-size: 0.98rem;
+        }
+
+        .payload {
+            margin: 16px 0 0;
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(30, 45, 47, 0.06);
+            color: #244144;
+            font-size: 0.88rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .toast-stack {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: grid;
+            gap: 10px;
+            width: min(360px, calc(100vw - 32px));
+            pointer-events: none;
+        }
+
+        .toast {
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.58);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(16px);
+            background: rgba(255, 252, 246, 0.96);
+            color: var(--ink);
+            font-size: 0.94rem;
+            line-height: 1.5;
+            opacity: 0;
+            transform: translateY(-6px);
+            animation: toast-in 0.18s ease forwards;
+        }
+
+        .toast-success {
+            border-color: rgba(17, 115, 107, 0.2);
+            background: rgba(240, 250, 248, 0.96);
+        }
+
+        .toast-error {
+            border-color: rgba(160, 63, 77, 0.22);
+            background: rgba(255, 244, 245, 0.96);
+        }
+
+        .field-stack {
+            display: grid;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .field-stack label {
+            color: var(--muted);
+            font-size: 0.84rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .field-stack input,
+        .field-stack select {
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid rgba(30, 45, 47, 0.12);
+            background: rgba(255, 255, 255, 0.82);
+            padding: 14px 16px;
+            font: inherit;
+            color: var(--ink);
+        }
+
+        .field-stack input:focus,
+        .field-stack select:focus {
+            outline: 2px solid rgba(17, 115, 107, 0.18);
+            border-color: rgba(17, 115, 107, 0.38);
+        }
+
+        .sidebar {
+            display: grid;
+            gap: 18px;
+        }
+
+        .signal-card {
+            background: var(--panel);
+        }
+
+        .label {
+            margin: 0 0 10px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+        }
+
+        .signal-risk {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
+        .risk-low {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .risk-medium {
+            background: var(--warn-soft);
+            color: var(--warn);
+        }
+
+        .risk-high {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+
+        .risk-reviewed {
+            background: rgba(85, 98, 160, 0.14);
+            color: #5562a0;
+        }
+
+        .risk-awaiting {
+            background: rgba(92, 103, 103, 0.14);
+            color: var(--muted);
+        }
+
+        .signal-copy {
+            margin: 16px 0 0;
+            line-height: 1.7;
+            color: var(--muted);
+        }
+
+        .detail-list {
+            margin: 16px 0 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 12px;
+        }
+
+        .detail-list li {
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.56);
+            border: 1px solid rgba(30, 45, 47, 0.08);
+            color: var(--muted);
+        }
+
+        .detail-list strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--ink);
+            font-size: 0.84rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .back-link {
+            display: inline-flex;
+            margin-top: 18px;
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .followup-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 18px;
+            padding: 14px 20px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 700;
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(30, 45, 47, 0.12);
+            transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .followup-link:hover {
+            transform: translateY(-1px);
+        }
+
+        .history-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .history-item {
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(30, 45, 47, 0.08);
+            background: rgba(255, 255, 255, 0.58);
+            display: grid;
+            gap: 10px;
+        }
+
+        .history-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .history-meta {
+            color: var(--muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .history-script {
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .history-link {
+            color: var(--accent);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .history-link:hover {
+            text-decoration: underline;
+        }
+
+        .compare-card {
+            display: grid;
+            gap: 14px;
+        }
+
+        .compare-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .compare-copy {
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .compare-note {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(17, 115, 107, 0.08);
+            color: var(--ink);
+            line-height: 1.6;
+        }
+
+        .compare-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .compare-column {
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(30, 45, 47, 0.08);
+            background: rgba(255, 255, 255, 0.58);
+            display: grid;
+            gap: 8px;
+        }
+
+        .compare-meta {
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .compare-script {
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .sms-list {
+            margin-top: 16px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .sms-item {
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(30, 45, 47, 0.08);
+            background: rgba(255, 255, 255, 0.58);
+            display: grid;
+            gap: 8px;
+        }
+
+        .sms-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sms-copy {
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 0.94rem;
+        }
+
+        @keyframes fade-up {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes toast-in {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-host" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+    <main class="shell">
+        <span class="eyebrow">Voice-first outreach</span>
+        <section class="hero">
+            <h1>Signal Over Noise</h1>
+            <p class="lede">
+                Hello {{ name }}. This is your {{ campaign_type.replace('_', ' ') }} check-in.
+                Watch the short care-team video, then leave a 15-second voice note so the platform can
+                capture a transcript and a biomarker-informed risk signal.
+            </p>
+        </section>
+
+        <input id="customer_id" type="hidden" value="{{ customer_id }}">
+        <input id="customer_name" type="hidden" value="{{ name }}">
+        <input id="campaign_type" type="hidden" value="{{ campaign_type }}">
+
+        <section class="grid">
+            <article class="card">
+                <div class="video-meta">
+                    <span class="pill">Customer {{ customer_id }}</span>
+                    <span class="pill">{{ campaign_type.replace('_', ' ') }}</span>
+                    <span class="pill">15-second response requested</span>
+                </div>
+
+                <video controls preload="metadata" poster="{{ thumbnail_url }}">
+                    <source src="{{ video_url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+
+                <div class="actions">
+                    <button id="record-button" class="primary" onclick="startRecording()">Record 15-second voice note</button>
+                    <button id="demo-note-button" class="secondary" onclick="submitDemoVoiceNote()">Use demo voice note</button>
+                    <button id="download-case-brief-button" class="secondary" type="button">Download case brief</button>
+                </div>
+
+                <p id="status" class="status"></p>
+                <pre id="voice-note-result" class="payload"></pre>
+                <a class="back-link" href="/web/upload.html">Back to demo console</a>
+            </article>
+
+            <aside class="sidebar">
+                <section class="card signal-card">
+                    <p class="label">Latest Signal</p>
+                    <div id="signal-badge" class="signal-risk risk-awaiting">Awaiting response</div>
+                    <p id="signal-summary" class="signal-copy">
+                        No voice note has been submitted for this customer yet. Record a live voice note or use the demo fallback to populate the latest biomarker snapshot.
+                    </p>
+                    <ul class="detail-list">
+                        <li>
+                            <strong>Transcript</strong>
+                            <span id="signal-transcript">No transcript available yet.</span>
+                        </li>
+                        <li>
+                            <strong>Last Updated</strong>
+                            <span id="signal-timestamp">No submissions yet.</span>
+                        </li>
+                    </ul>
+                </section>
+
+                <section class="card">
+                    <p class="label">Next Outreach</p>
+                    <div id="followup-badge" class="signal-risk risk-awaiting">Awaiting response</div>
+                    <p id="followup-summary" class="signal-copy">
+                        No voice note has been submitted yet. Prepare a reminder outreach to keep this patient journey moving.
+                    </p>
+                    <ul class="detail-list">
+                        <li>
+                            <strong>Recommended Plan</strong>
+                            <span id="followup-plan">first-response-reminder</span>
+                        </li>
+                        <li>
+                            <strong>Suggested Timing</strong>
+                            <span id="followup-timing">1 day follow-up</span>
+                        </li>
+                    </ul>
+                    <a id="followup-link" class="followup-link" href="/web/upload.html">Prepare follow-up in console</a>
+                </section>
+
+                <section class="card">
+                    <p class="label">Twilio Follow-up</p>
+                    <div id="sms-badge" class="signal-risk risk-awaiting">No SMS sent</div>
+                    <p id="sms-summary" class="signal-copy">
+                        Send the current care-page link as a Twilio-style demo SMS so the outreach handoff is visible from the patient context too.
+                    </p>
+                    <div class="field-stack">
+                        <label for="sms-phone-number">Demo phone number</label>
+                        <input id="sms-phone-number" type="tel" value="+447700900123" placeholder="+447700900123">
+                    </div>
+                    <div class="actions">
+                        <button id="send-sms-button" class="primary" type="button">Send Twilio demo SMS</button>
+                    </div>
+                    <div class="field-stack">
+                        <label for="sms-sim-status">Simulate Twilio status</label>
+                        <select id="sms-sim-status">
+                            <option value="sent">sent</option>
+                            <option value="delivered">delivered</option>
+                            <option value="undelivered">undelivered</option>
+                            <option value="failed">failed</option>
+                        </select>
+                    </div>
+                    <div class="actions">
+                        <button id="simulate-sms-status-button" class="secondary" type="button">Simulate status callback</button>
+                        <button id="progress-sms-status-button" class="secondary" type="button">Run queued -> sent -> delivered</button>
+                        <button id="retry-sms-delivery-button" class="secondary" type="button">Retry failed delivery</button>
+                        <button id="prepare-sms-fallback-button" class="secondary" type="button">Copy secure link fallback</button>
+                    </div>
+                    <p id="sms-status" class="status">No patient-level Twilio outreach sent yet.</p>
+                    <div id="sms-list" class="sms-list"></div>
+                    <p id="sms-resource-status" class="status">No Twilio message resource loaded yet.</p>
+                    <pre id="sms-resource-preview" class="payload">No Twilio message resource loaded yet.</pre>
+                    <p id="sms-message-list-status" class="status">No Twilio message list loaded yet.</p>
+                    <pre id="sms-message-list-preview" class="payload">No Twilio message list loaded yet.</pre>
+                    <p id="sms-fallback-status" class="status">No secure-link fallbacks prepared yet.</p>
+                    <div id="sms-fallback-list" class="sms-list"></div>
+                </section>
+
+                <section class="card">
+                    <p class="label">Review State</p>
+                    <div id="review-badge" class="signal-risk risk-awaiting">Loading review state</div>
+                    <p id="review-summary" class="signal-copy">
+                        Checking whether a voice note and any care-team review are already on record for this case.
+                    </p>
+                    <ul class="detail-list">
+                        <li>
+                            <strong>Latest Review</strong>
+                            <span id="review-meta">Loading review activity...</span>
+                        </li>
+                    </ul>
+                    <div class="field-stack">
+                        <label for="reviewer-name">Reviewer name</label>
+                        <input id="reviewer-name" type="text" value="Jordan Lee" placeholder="Jordan Lee">
+                    </div>
+                    <div class="field-stack">
+                        <label for="review-outcome">Review outcome</label>
+                        <select id="review-outcome">
+                            <option value="routine_followup">routine_followup</option>
+                            <option value="escalated">escalated</option>
+                            <option value="closed">closed</option>
+                        </select>
+                    </div>
+                    <div class="field-stack">
+                        <label for="review-note">Review note</label>
+                        <input id="review-note" type="text" value="Reviewed and queued next step." placeholder="Reviewed and queued next step.">
+                    </div>
+                    <div class="actions">
+                        <button id="mark-reviewed-button" class="secondary" type="button" disabled>Mark case reviewed</button>
+                    </div>
+                    <p id="review-status" class="status">Checking whether this case is ready for review...</p>
+                </section>
+
+                <section class="card">
+                    <p class="label">Outreach History</p>
+                    <p id="history-status" class="status">Loading prior outreach attempts...</p>
+                    <div id="history-list" class="history-list"></div>
+                </section>
+
+                <section class="card">
+                    <p class="label">Messaging Shift</p>
+                    <div class="compare-card">
+                        <div class="compare-top">
+                            <div id="compare-badge" class="signal-risk risk-awaiting">Awaiting comparison</div>
+                        </div>
+                        <p id="compare-summary" class="compare-copy">
+                            Generate at least two outreach attempts for this patient journey to compare how the messaging changes.
+                        </p>
+                        <div id="compare-rationale" class="compare-note">
+                            No risk-linked explanation is available yet.
+                        </div>
+                        <ul id="compare-highlights" class="detail-list">
+                            <li>
+                                <strong>Latest Plan</strong>
+                                <span id="compare-latest-plan">No comparison available yet.</span>
+                            </li>
+                            <li>
+                                <strong>Previous Plan</strong>
+                                <span id="compare-previous-plan">No comparison available yet.</span>
+                            </li>
+                            <li>
+                                <strong>Key Shift</strong>
+                                <span id="compare-shift">Create another outreach attempt to see the messaging evolve.</span>
+                            </li>
+                        </ul>
+                        <div class="compare-grid">
+                            <div class="compare-column">
+                                <strong>Latest script</strong>
+                                <div id="compare-latest-meta" class="compare-meta">No latest script available yet.</div>
+                                <div id="compare-latest-script" class="compare-script">Create another outreach attempt to populate this comparison view.</div>
+                            </div>
+                            <div class="compare-column">
+                                <strong>Previous script</strong>
+                                <div id="compare-previous-meta" class="compare-meta">No previous script available yet.</div>
+                                <div id="compare-previous-script" class="compare-script">Create another outreach attempt to populate this comparison view.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <p class="label">Care Context</p>
+                    <ul class="detail-list">
+                        <li>
+                            <strong>Campaign</strong>
+                            <span>{{ campaign_type.replace('_', ' ') }}</span>
+                        </li>
+                        <li>
+                            <strong>Workflow</strong>
+                            <span>Video outreach, speech-to-text, thymia-style risk bucketing, and Tuner event logging.</span>
+                        </li>
+                        <li>
+                            <strong>Fallback</strong>
+                            <span>The demo voice-note path keeps the PoC runnable even if browser microphone permissions are unavailable during a live pitch.</span>
+                        </li>
+                    </ul>
+                </section>
+            </aside>
+        </section>
+    </main>
+
+    <script src="/web/js/record.js"></script>
+</body>
+</html>
